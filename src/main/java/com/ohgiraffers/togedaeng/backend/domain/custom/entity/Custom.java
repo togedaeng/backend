@@ -31,5 +31,4 @@ public class Custom {
 	// 반려견 생년월일
 	@Column(name = "birth")
 	private LocalDate birth;
-
 }
