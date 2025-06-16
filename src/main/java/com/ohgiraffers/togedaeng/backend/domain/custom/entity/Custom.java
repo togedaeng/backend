@@ -28,7 +28,8 @@ public class Custom {
 	// 반려견 성별
 	private Gender gender;
 
-	@Column(name = "birth_date")
-	private LocalDate birthDate;
+	// 반려견 생년월일
+	@Column(name = "birth")
+	private LocalDate birth;
 
 }
