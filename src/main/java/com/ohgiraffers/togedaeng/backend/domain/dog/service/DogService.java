@@ -86,10 +86,31 @@ public class DogService {
 			));
 		}
 
+		log.info("Get all dogs: {}", dogResponseDtos);
+
 		return dogResponseDtos;
 	}
 
 	// 기본 강아지 단일 조회
+	public DogResponseDto getDogById(Long id) {
+		Dog dog = dogRepository.findById(id).orElse(null);
+		log.info("Get dog by id: {}", id);
+		
+		return new DogResponseDto(
+			dog.getId(),
+			dog.getUserId(),
+			dog.getName(),
+			dog.getGender(),
+			dog.getBirth(),
+			dog.getType(),
+			dog.getCallName(),
+			dog.getStatus(),
+			dog.getCreatedAt(),
+			dog.getUpdatedAt(),
+			dog.getDeletedAt()
+		);
+
+	}
 
 	// 기본 강아지 이름 수정
 
