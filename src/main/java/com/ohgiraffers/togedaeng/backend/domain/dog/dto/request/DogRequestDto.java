@@ -1,7 +1,5 @@
 package com.ohgiraffers.togedaeng.backend.domain.dog.dto.request;
 
-import java.time.LocalDate;
-
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Type;
@@ -21,9 +19,7 @@ public class DogRequestDto {
 	private Long personalityCombinationId;
 	private String name;
 	private Gender gender;
-	private LocalDate birth;
 	private Type type;
 	private String callName;
 	private Status status;
-
 }
