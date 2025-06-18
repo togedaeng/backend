@@ -10,8 +10,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DogRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
@@ -116,7 +118,7 @@ public class DogService {
 
 	// 기본 강아지 이름 수정
 	public UpdateDogNameResponseDto updateDogName(Long id, UpdateDogNameRequestDto dto) {
-		Dog dog = dogRepository.findById(dto.getDogId()).orElseThrow(() ->
+		Dog dog = dogRepository.findById(id).orElseThrow(() ->
 			new IllegalArgumentException("Dog not found"));
 
 		log.info("Update dog name: {}", dto.getNewName());
@@ -134,4 +136,21 @@ public class DogService {
 	}
 
 	// 기본 강아지 애칭 수정
+	public UpdateDogCallNameResponseDto updateDogCallName(Long id, UpdateDogCallNameRequestDto dto) {
+		Dog dog = dogRepository.findById(id).orElseThrow(() ->
+			new IllegalArgumentException("Dog not found"));
+
+		log.info("Update call name: {}", dto.getNewCallName());
+
+		dog.setCallName(dto.getNewCallName());
+		dog.setUpdatedAt(LocalDateTime.now());
+
+		Dog updatedDog = dogRepository.save(dog);
+
+		return new UpdateDogCallNameResponseDto(
+			updatedDog.getId(),
+			updatedDog.getCallName(),
+			updatedDog.getUpdatedAt()
+		);
+	}
 }
