@@ -11,6 +11,7 @@ public class DogResponseDto {
 
 	private Long id;
 	private Long userId;
+	private Long personalityCombinationId;
 	private String name;
 	private Gender gender;
 	private LocalDate birth;
@@ -24,10 +25,13 @@ public class DogResponseDto {
 	public DogResponseDto() {
 	}
 
-	public DogResponseDto(Long id, Long userId, String name, Gender gender, LocalDate birth, Type type, String callName,
-		Status status, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt) {
+	public DogResponseDto(Long id, Long userId, Long personalityCombinationId, String name, Gender gender,
+		LocalDate birth,
+		Type type, String callName, Status status, LocalDateTime createdAt, LocalDateTime updatedAt,
+		LocalDateTime deletedAt) {
 		this.id = id;
 		this.userId = userId;
+		this.personalityCombinationId = personalityCombinationId;
 		this.name = name;
 		this.gender = gender;
 		this.birth = birth;
@@ -53,6 +57,14 @@ public class DogResponseDto {
 
 	public void setUserId(Long userId) {
 		this.userId = userId;
+	}
+
+	public Long getPersonalityCombinationId() {
+		return personalityCombinationId;
+	}
+
+	public void setPersonalityCombinationId(Long personalityCombinationId) {
+		this.personalityCombinationId = personalityCombinationId;
 	}
 
 	public String getName() {

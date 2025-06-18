@@ -20,6 +20,9 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameRe
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
+import com.ohgiraffers.togedaeng.backend.domain.personality.entity.PersonalityCombination;
+import com.ohgiraffers.togedaeng.backend.domain.personality.repository.DogPersonalityRepository;
+import com.ohgiraffers.togedaeng.backend.domain.personality.repository.PersonalityCombinationRepository;
 
 @Service
 public class DogService {
@@ -27,9 +30,14 @@ public class DogService {
 	Logger log = LoggerFactory.getLogger(DogService.class);
 
 	private final DogRepository dogRepository;
+	private final DogPersonalityRepository dogPersonalityRepository;
+	private final PersonalityCombinationRepository personalityCombinationRepository;
 
-	public DogService(DogRepository dogRepository) {
+	public DogService(DogRepository dogRepository, PersonalityCombinationRepository personalityCombinationRepository,
+		DogPersonalityRepository dogPersonalityRepository) {
 		this.dogRepository = dogRepository;
+		this.personalityCombinationRepository = personalityCombinationRepository;
+		this.dogPersonalityRepository = dogPersonalityRepository;
 	}
 
 	/**
@@ -41,10 +49,36 @@ public class DogService {
 
 		// 유저 아이디로 유저 정보 찾기
 
+		Long personalityId1 = dto.getPersonalityId1();  // 필수
+		Long personalityId2 = dto.getPersonalityId2();  // null 가능
+
+		if (personalityId1 == null) {
+			throw new IllegalArgumentException("성격 하나는 반드시 선택해야 함");
+		}
+
+		// 같은 값 두 번 선택한 경우 -> 하나만 사용
+		if (personalityId2 != null && personalityId1.equals(personalityId2)) {
+			personalityId2 = null;
+		}
+
+		// 정렬 (순서에 상관없이 동일한 조합으로 판단)
+		Long first = (personalityId2 == null || personalityId1 < personalityId2) ? personalityId1 : personalityId2;
+		Long second = (personalityId2 == null || personalityId1 < personalityId2) ? personalityId2 : personalityId1;
+
+		// 조합 조회 or 생성
+		PersonalityCombination combination = personalityCombinationRepository
+			.findByPersonalityId1AndPersonalityId2(first, second)
+			.orElseGet(() -> {
+				PersonalityCombination newCombo = new PersonalityCombination();
+				newCombo.setPersonalityId1(first);
+				newCombo.setPersonalityId2(second); // p2가 null이면 null 저장됨
+				return personalityCombinationRepository.save(newCombo);
+			});
+
 		try {
 			Dog dog = Dog.builder()
 				.userId(dto.getUserId())
-				.personalityCombinationId(dto.getPersonalityCombinationId())
+				.personalityCombinationId(combination.getId())
 				.name(dto.getName())
 				.gender(dto.getGender())
 				.birth(LocalDate.now())
@@ -60,6 +94,7 @@ public class DogService {
 			return new DogResponseDto(
 				savedDog.getId(),
 				savedDog.getUserId(),
+				savedDog.getPersonalityCombinationId(),
 				savedDog.getName(),
 				savedDog.getGender(),
 				savedDog.getBirth(),
@@ -88,6 +123,7 @@ public class DogService {
 			dogResponseDtos.add(new DogResponseDto(
 				dog.getId(),
 				dog.getUserId(),
+				dog.getPersonalityCombinationId(),
 				dog.getName(),
 				dog.getGender(),
 				dog.getBirth(),
@@ -117,6 +153,7 @@ public class DogService {
 		return new DogResponseDto(
 			dog.getId(),
 			dog.getUserId(),
+			dog.getPersonalityCombinationId(),
 			dog.getName(),
 			dog.getGender(),
 			dog.getBirth(),
