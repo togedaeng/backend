@@ -76,7 +76,7 @@ public class DogController {
 	 * 📍 강아지 이름 수정
 	 * @param id 강아지 id
 	 * @param updateDogNameRequestDto 강아지 id, 수정할 이름
-	 * @return 강아지 id, 수정된 이름, 수정일자
+	 * @return 수정된 강아지 이름 정보 (id, 수정된 이름, 수정 시각)
 	 */
 	@PatchMapping("/{id}/name")
 	public ResponseEntity<UpdateDogNameResponseDto> updateDogName(@PathVariable("id") Long id,
@@ -90,7 +90,7 @@ public class DogController {
 	 * 📍 주인 애칭 수정
 	 * @param id 강아지 id
 	 * @param updateDogCallNameRequestDto 강아지 id, 수정할 주인 애칭
-	 * @return 강아지 id, 수정된 애칭, 수정일자
+	 * @return 수정된 강아지 애칭 정보 (id, 수정된 애칭, 수정 시각)
 	 */
 	@PatchMapping("/{id}/call-name")
 	public ResponseEntity<UpdateDogCallNameResponseDto> updateDogCallName(@PathVariable("id") Long id,
@@ -105,7 +105,7 @@ public class DogController {
 	 * 상태 INACTIVE로 변경
 	 * @param id 강아지 id
 	 * @param deleteDogRequestDto 강아지 id
-	 * @return 강아지 id, 강아지 이름, 상태(INACTIVE), 삭제일자
+	 * @return 삭제된 강아지 정보 (id, 이름, 상태(INACTIVE), 삭제일자)
 	 */
 	@PatchMapping("/{id}/status")
 	public ResponseEntity<DeleteDogResponseDto> deleteDog(@PathVariable("id") Long id,

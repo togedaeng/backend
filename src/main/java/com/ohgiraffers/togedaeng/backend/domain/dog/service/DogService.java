@@ -32,7 +32,11 @@ public class DogService {
 		this.dogRepository = dogRepository;
 	}
 
-	// 기본 강아지 등록
+	/**
+	 * 📍 기본 강아지 등록
+	 * @param dto 강아지 등록 DTO
+	 * @return 등록된 강아지 DTO 변환
+	 */
 	public DogResponseDto createDog(DogRequestDto dto) {
 
 		// 유저 아이디로 유저 정보 찾기
@@ -72,7 +76,10 @@ public class DogService {
 		}
 	}
 
-	// 기본 강아지 전체 조회
+	/**
+	 * 📍 강아지 전체 조회
+	 * @return 모든 강아지 리스트
+	 */
 	public List<DogResponseDto> getAllDogs() {
 		List<Dog> dogs = dogRepository.findAll();
 		List<DogResponseDto> dogResponseDtos = new ArrayList<>();
@@ -98,7 +105,11 @@ public class DogService {
 		return dogResponseDtos;
 	}
 
-	// 기본 강아지 단일 조회
+	/**
+	 * 📍 강아지 단일 조회
+	 * @param id 강아지 id
+	 * @return 강아지 정보 DTO 변환
+	 */
 	public DogResponseDto getDogById(Long id) {
 		Dog dog = dogRepository.findById(id).orElse(null);
 		log.info("Get dog by id: {}", id);
@@ -119,7 +130,12 @@ public class DogService {
 
 	}
 
-	// 기본 강아지 이름 수정
+	/**
+	 * 📍 강아지 이름 수정
+	 * @param id 강아지 id
+	 * @param dto 강아지 id, 수정할 이름
+	 * @return 수정된 강아지 이름 정보 (id, 이름, 수정 시각)
+	 */
 	public UpdateDogNameResponseDto updateDogName(Long id, UpdateDogNameRequestDto dto) {
 		Dog dog = dogRepository.findById(id).orElseThrow(() ->
 			new IllegalArgumentException("Dog not found"));
@@ -138,7 +154,12 @@ public class DogService {
 		);
 	}
 
-	// 기본 강아지 애칭 수정
+	/**
+	 * 📍 강아지 애칭 수정
+	 * @param id 강아지 id
+	 * @param dto 강아지 id, 수정할 주인 애칭
+	 * @return 수정된 강아지 애칭 정보 (id, 애칭, 수정 시각)
+	 */
 	public UpdateDogCallNameResponseDto updateDogCallName(Long id, UpdateDogCallNameRequestDto dto) {
 		Dog dog = dogRepository.findById(id).orElseThrow(() ->
 			new IllegalArgumentException("Dog not found"));
@@ -157,7 +178,12 @@ public class DogService {
 		);
 	}
 
-	// 강아지 삭제
+	/**
+	 * 📍 강아지 삭제
+	 * @param id 강아지 id
+	 * @param dto 강아지 id
+	 * @return 삭제된 강아지 정보 (id, 이름, 상태(INACTIVE), 삭제일자)
+	 */
 	public DeleteDogResponseDto deleteDog(Long id, DeleteDogRequestDto dto) {
 		Dog dog = dogRepository.findById(id).orElseThrow(() ->
 			new IllegalArgumentException("Dog not found"));
