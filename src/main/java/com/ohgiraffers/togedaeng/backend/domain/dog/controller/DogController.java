@@ -14,17 +14,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DeleteDogRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameRequestDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogPersonalityRequestDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.CreateDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DeleteDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogPersonalityResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.service.DogService;
 
 @RestController
@@ -46,10 +43,10 @@ public class DogController {
 	 * @return 등록된 강아지 정보
 	 */
 	@PostMapping("/create")
-	public ResponseEntity<CreateDogResponseDto> createDog(@RequestBody CreateDogRequestDto dogRequestDto) {
+	public ResponseEntity<DogResponseDto> createDog(@RequestBody DogRequestDto dogRequestDto) {
 		log.info("Create dog request: {}", dogRequestDto);
-		CreateDogResponseDto createDogResponseDto = dogService.createDog(dogRequestDto);
-		return new ResponseEntity<>(createDogResponseDto, HttpStatus.CREATED);
+		DogResponseDto dogResponseDto = dogService.createDog(dogRequestDto);
+		return new ResponseEntity<>(dogResponseDto, HttpStatus.CREATED);
 	}
 
 	/**
@@ -101,16 +98,6 @@ public class DogController {
 		log.info("Update call name: {}", updateDogCallNameRequestDto.getNewCallName());
 		UpdateDogCallNameResponseDto dog = dogService.updateDogCallName(id, updateDogCallNameRequestDto);
 		return new ResponseEntity<>(dog, HttpStatus.OK);
-	}
-
-	// 강아지 성격 수정
-	@PatchMapping("/{id}/personality")
-	public ResponseEntity<UpdateDogPersonalityResponseDto> updateDogPersonality(@PathVariable("id") Long id,
-		@RequestBody UpdateDogPersonalityRequestDto updateDogPersonalityRequestDto) {
-		log.info("Update dog personality: {}", updateDogPersonalityRequestDto);
-		UpdateDogPersonalityResponseDto dog = dogService.updateDogPersonality(id, updateDogPersonalityRequestDto);
-		return new ResponseEntity<>(dog, HttpStatus.OK);
-
 	}
 
 	/**

@@ -9,17 +9,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DeleteDogRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameRequestDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogPersonalityRequestDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.CreateDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DeleteDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogPersonalityResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
@@ -27,16 +24,14 @@ import com.ohgiraffers.togedaeng.backend.domain.personality.entity.PersonalityCo
 import com.ohgiraffers.togedaeng.backend.domain.personality.repository.DogPersonalityRepository;
 import com.ohgiraffers.togedaeng.backend.domain.personality.repository.PersonalityCombinationRepository;
 
-import jakarta.transaction.Transactional;
-
 @Service
 public class DogService {
 
 	Logger log = LoggerFactory.getLogger(DogService.class);
 
 	private final DogRepository dogRepository;
-	private final PersonalityCombinationRepository personalityCombinationRepository;
 	private final DogPersonalityRepository dogPersonalityRepository;
+	private final PersonalityCombinationRepository personalityCombinationRepository;
 
 	public DogService(DogRepository dogRepository, PersonalityCombinationRepository personalityCombinationRepository,
 		DogPersonalityRepository dogPersonalityRepository) {
@@ -50,8 +45,7 @@ public class DogService {
 	 * @param dto 강아지 등록 DTO
 	 * @return 등록된 강아지 DTO 변환
 	 */
-	@Transactional
-	public CreateDogResponseDto createDog(CreateDogRequestDto dto) {
+	public DogResponseDto createDog(DogRequestDto dto) {
 
 		// 유저 아이디로 유저 정보 찾기
 
@@ -97,7 +91,7 @@ public class DogService {
 			Dog savedDog = dogRepository.save(dog);
 			log.info("Creating new dog: {}", dto.getName());
 
-			return new CreateDogResponseDto(
+			return new DogResponseDto(
 				savedDog.getId(),
 				savedDog.getUserId(),
 				savedDog.getPersonalityCombinationId(),
@@ -121,7 +115,6 @@ public class DogService {
 	 * 📍 강아지 전체 조회
 	 * @return 모든 강아지 리스트
 	 */
-	@Transactional
 	public List<DogResponseDto> getAllDogs() {
 		List<Dog> dogs = dogRepository.findAll();
 		List<DogResponseDto> dogResponseDtos = new ArrayList<>();
@@ -153,7 +146,6 @@ public class DogService {
 	 * @param id 강아지 id
 	 * @return 강아지 정보 DTO 변환
 	 */
-	@Transactional
 	public DogResponseDto getDogById(Long id) {
 		Dog dog = dogRepository.findById(id).orElse(null);
 		log.info("Get dog by id: {}", id);
@@ -181,7 +173,6 @@ public class DogService {
 	 * @param dto 강아지 id, 수정할 이름
 	 * @return 수정된 강아지 이름 정보 (id, 이름, 수정 시각)
 	 */
-	@Transactional
 	public UpdateDogNameResponseDto updateDogName(Long id, UpdateDogNameRequestDto dto) {
 		Dog dog = dogRepository.findById(id).orElseThrow(() ->
 			new IllegalArgumentException("Dog not found"));
@@ -206,7 +197,6 @@ public class DogService {
 	 * @param dto 강아지 id, 수정할 주인 애칭
 	 * @return 수정된 강아지 애칭 정보 (id, 애칭, 수정 시각)
 	 */
-	@Transactional
 	public UpdateDogCallNameResponseDto updateDogCallName(Long id, UpdateDogCallNameRequestDto dto) {
 		Dog dog = dogRepository.findById(id).orElseThrow(() ->
 			new IllegalArgumentException("Dog not found"));
@@ -225,72 +215,12 @@ public class DogService {
 		);
 	}
 
-	// 강아지 성격 수정
-	@Transactional
-	public UpdateDogPersonalityResponseDto updateDogPersonality(Long id, UpdateDogPersonalityRequestDto dto) {
-		Dog dog = dogRepository.findById(id).orElseThrow(() ->
-			new IllegalArgumentException("Dog not found"));
-
-		Long newPersonalityId1 = dto.getNewPersonalityId1();  // 필수
-		Long newPersonalityId2 = dto.getNewPersonalityId2();  // null 가능
-
-		if (newPersonalityId1 == null) {
-			throw new IllegalArgumentException("성격 하나는 반드시 선택해야 함");
-		}
-
-		// 같은 값 두 번 선택한 경우 -> 하나만 사용
-		if (newPersonalityId2 != null && newPersonalityId1.equals(newPersonalityId2)) {
-			newPersonalityId2 = null;
-		}
-
-		// 정렬 (순서에 상관없이 동일한 조합으로 판단)
-		Long first = (newPersonalityId2 == null || newPersonalityId1 < newPersonalityId2) ? newPersonalityId1 :
-			newPersonalityId2;
-		Long second = (newPersonalityId2 == null || newPersonalityId1 < newPersonalityId2) ? newPersonalityId2 :
-			newPersonalityId1;
-
-		// 조합 조회 or 생성
-		PersonalityCombination combination = personalityCombinationRepository
-			.findByPersonalityId1AndPersonalityId2(first, second)
-			.orElseGet(() -> {
-				PersonalityCombination newCombo = new PersonalityCombination();
-				newCombo.setPersonalityId1(first);
-				newCombo.setPersonalityId2(second); // p2가 null이면 null 저장됨
-				return personalityCombinationRepository.save(newCombo);
-			});
-
-		// 강아지에 조합 ID 설정
-		dog.setPersonalityCombinationId(combination.getId());
-		dog.setUpdatedAt(LocalDateTime.now());
-
-		// 저장
-		Dog updatedDog = dogRepository.save(dog);
-
-		// 성격 이름 조회
-		List<String> personalityNames = new ArrayList<>();
-		dogPersonalityRepository.findById(first)
-			.ifPresent(p -> personalityNames.add(p.getName()));
-		if (second != null) {
-			dogPersonalityRepository.findById(second)
-				.ifPresent(p -> personalityNames.add(p.getName()));
-		}
-
-		// 응답
-		return new UpdateDogPersonalityResponseDto(
-			updatedDog.getId(),
-			combination.getId(),
-			personalityNames,
-			updatedDog.getUpdatedAt()
-		);
-	}
-
 	/**
 	 * 📍 강아지 삭제
 	 * @param id 강아지 id
 	 * @param dto 강아지 id
 	 * @return 삭제된 강아지 정보 (id, 이름, 상태(INACTIVE), 삭제일자)
 	 */
-	@Transactional
 	public DeleteDogResponseDto deleteDog(Long id, DeleteDogRequestDto dto) {
 		Dog dog = dogRepository.findById(id).orElseThrow(() ->
 			new IllegalArgumentException("Dog not found"));
