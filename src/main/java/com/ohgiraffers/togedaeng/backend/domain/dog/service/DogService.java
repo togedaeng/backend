@@ -9,13 +9,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DeleteDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DeleteDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
+import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
 
 @Service
@@ -151,6 +154,26 @@ public class DogService {
 			updatedDog.getId(),
 			updatedDog.getCallName(),
 			updatedDog.getUpdatedAt()
+		);
+	}
+
+	// 강아지 삭제
+	public DeleteDogResponseDto deleteDog(Long id, DeleteDogRequestDto dto) {
+		Dog dog = dogRepository.findById(id).orElseThrow(() ->
+			new IllegalArgumentException("Dog not found"));
+
+		log.info("Delete dog: {}", dto.getDogId());
+
+		dog.setStatus(Status.INACTIVE);
+		dog.setDeletedAt(LocalDateTime.now());
+
+		Dog updatedDog = dogRepository.save(dog);
+
+		return new DeleteDogResponseDto(
+			updatedDog.getId(),
+			updatedDog.getName(),
+			updatedDog.getStatus(),
+			updatedDog.getDeletedAt()
 		);
 	}
 }

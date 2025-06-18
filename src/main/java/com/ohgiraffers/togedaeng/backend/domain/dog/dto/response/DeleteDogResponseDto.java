@@ -7,14 +7,16 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 public class DeleteDogResponseDto {
 
 	private Long dogId;
+	private String dogName;
 	private Status status;
 	private LocalDateTime deletedAt;
 
 	public DeleteDogResponseDto() {
 	}
 
-	public DeleteDogResponseDto(Long dogId, Status status, LocalDateTime deletedAt) {
+	public DeleteDogResponseDto(Long dogId, String dogName, Status status, LocalDateTime deletedAt) {
 		this.dogId = dogId;
+		this.dogName = dogName;
 		this.status = status;
 		this.deletedAt = deletedAt;
 	}
@@ -25,6 +27,14 @@ public class DeleteDogResponseDto {
 
 	public void setDogId(Long dogId) {
 		this.dogId = dogId;
+	}
+
+	public String getDogName() {
+		return dogName;
+	}
+
+	public void setDogName(String dogName) {
+		this.dogName = dogName;
 	}
 
 	public Status getStatus() {
@@ -47,6 +57,7 @@ public class DeleteDogResponseDto {
 	public String toString() {
 		return "DeleteDogResponseDto{" +
 			"dogId=" + dogId +
+			", dogName='" + dogName + '\'' +
 			", status=" + status +
 			", deletedAt=" + deletedAt +
 			'}';

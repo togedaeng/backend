@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DeleteDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DeleteDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
@@ -98,11 +100,18 @@ public class DogController {
 		return new ResponseEntity<>(dog, HttpStatus.OK);
 	}
 
-	// // 강아지 삭제 - INACTIVE로 상태 변경 후 삭제 날짜 갱신
-	// @PatchMapping("/{id}/status")
-	// public ResponseEntity<DeleteDogResponseDto> deleteDog(@PathVariable("id") Long id,
-	// 	@RequestBody DeleteDogRequestDto deleteDogRequestDto) {
-	// 	log.info("Delete dog: {}", deleteDogRequestDto);
-	//
-	// }
+	/**
+	 * 📍 강아지 삭제
+	 * 상태 INACTIVE로 변경
+	 * @param id 강아지 id
+	 * @param deleteDogRequestDto 강아지 id
+	 * @return 강아지 id, 강아지 이름, 상태(INACTIVE), 삭제일자
+	 */
+	@PatchMapping("/{id}/status")
+	public ResponseEntity<DeleteDogResponseDto> deleteDog(@PathVariable("id") Long id,
+		@RequestBody DeleteDogRequestDto deleteDogRequestDto) {
+		log.info("Delete dog: {}", deleteDogRequestDto);
+		DeleteDogResponseDto dog = dogService.deleteDog(id, deleteDogRequestDto);
+		return new ResponseEntity<>(dog, HttpStatus.OK);
+	}
 }
