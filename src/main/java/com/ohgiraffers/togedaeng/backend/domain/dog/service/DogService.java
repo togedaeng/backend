@@ -10,7 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DogRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
 
@@ -95,7 +97,7 @@ public class DogService {
 	public DogResponseDto getDogById(Long id) {
 		Dog dog = dogRepository.findById(id).orElse(null);
 		log.info("Get dog by id: {}", id);
-		
+
 		return new DogResponseDto(
 			dog.getId(),
 			dog.getUserId(),
@@ -113,6 +115,23 @@ public class DogService {
 	}
 
 	// 기본 강아지 이름 수정
+	public UpdateDogNameResponseDto updateDogName(UpdateDogNameRequestDto dto) {
+		Dog dog = dogRepository.findById(dto.getDogId()).orElseThrow(() ->
+			new IllegalArgumentException("Dog not found"));
+
+		log.info("Update dog name: {}", dto.getNewName());
+
+		dog.setName(dto.getNewName());
+		dog.setUpdatedAt(LocalDateTime.now());
+
+		Dog updatedDog = dogRepository.save(dog);
+
+		return new UpdateDogNameResponseDto(
+			updatedDog.getId(),
+			updatedDog.getName(),
+			updatedDog.getUpdatedAt()
+		);
+	}
 
 	// 기본 강아지 애칭 수정
 }
