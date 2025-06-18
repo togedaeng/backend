@@ -14,8 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DeleteDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DeleteDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.service.DogService;
@@ -69,17 +71,20 @@ public class DogController {
 	}
 
 	// 강아지 이름 수정
-	@PatchMapping("/update-dog-name")
-	public ResponseEntity<UpdateDogNameResponseDto> updateDogName(
+	@PatchMapping("/{id}/name")
+	public ResponseEntity<UpdateDogNameResponseDto> updateDogName(@PathVariable("id") Long id,
 		@RequestBody UpdateDogNameRequestDto updateDogNameRequestDto) {
-		log.info("Update dog name: {}", updateDogNameRequestDto);
-		UpdateDogNameResponseDto dog = dogService.updateDogName(updateDogNameRequestDto);
+		log.info("Update dog name: {}", updateDogNameRequestDto.getNewName());
+		UpdateDogNameResponseDto dog = dogService.updateDogName(id, updateDogNameRequestDto);
 		return new ResponseEntity<>(dog, HttpStatus.OK);
 	}
 
 	// 강아지 (나를 부르는)애칭 수정
 
 	// 강아지 삭제 - INACTIVE로 상태 변경 후 삭제 날짜 갱신
-	@PatchMapping("")
-	public ResponseEntity<UpdateDogNameResponseDto> updateDogName()
+	@PatchMapping("/{id}/status")
+	public ResponseEntity<DeleteDogResponseDto> deleteDog(@RequestBody DeleteDogRequestDto deleteDogRequestDto) {
+		log.info("Delete dog: {}", deleteDogRequestDto);
+
+	}
 }

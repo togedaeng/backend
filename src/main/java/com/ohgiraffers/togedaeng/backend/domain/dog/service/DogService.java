@@ -115,7 +115,7 @@ public class DogService {
 	}
 
 	// 기본 강아지 이름 수정
-	public UpdateDogNameResponseDto updateDogName(UpdateDogNameRequestDto dto) {
+	public UpdateDogNameResponseDto updateDogName(Long id, UpdateDogNameRequestDto dto) {
 		Dog dog = dogRepository.findById(dto.getDogId()).orElseThrow(() ->
 			new IllegalArgumentException("Dog not found"));
 
