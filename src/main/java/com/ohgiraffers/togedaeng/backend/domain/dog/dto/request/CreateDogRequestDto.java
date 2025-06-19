@@ -21,18 +21,20 @@ public class CreateDogRequestDto {
 	private Type type;
 	private String callName;
 	private Status status;
+	private int isMainDog;
 	private Long personalityId1; // 필수 성격 1
 	private Long personalityId2; // 선택 성격 2
 
 	@Override
 	public String toString() {
-		return "DogRequestDto{" +
+		return "CreateDogRequestDto{" +
 			"userId=" + userId +
 			", name='" + name + '\'' +
 			", gender=" + gender +
 			", type=" + type +
 			", callName='" + callName + '\'' +
 			", status=" + status +
+			", isMainDog=" + isMainDog +
 			", personalityId1=" + personalityId1 +
 			", personalityId2=" + personalityId2 +
 			'}';
