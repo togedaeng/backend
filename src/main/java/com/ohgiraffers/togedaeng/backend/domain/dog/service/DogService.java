@@ -18,6 +18,7 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.CreateDogRespon
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DeleteDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNameResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogIsMainResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogPersonalityResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
@@ -81,6 +82,11 @@ public class DogService {
 				return personalityCombinationRepository.save(newCombo);
 			});
 
+		boolean existsDog = dogRepository.existsByUserIdAndDeletedAtIsNull(dto.getUserId());
+
+		// 대표 강아지 여부 결정
+		int isMainDog = existsDog ? 0 : 1;
+
 		try {
 			Dog dog = Dog.builder()
 				.userId(dto.getUserId())
@@ -91,6 +97,7 @@ public class DogService {
 				.type(dto.getType())
 				.callName(dto.getCallName())
 				.status(dto.getStatus())
+				.isMainDog(isMainDog)
 				.createdAt(LocalDateTime.now())
 				.build();
 
@@ -107,6 +114,7 @@ public class DogService {
 				savedDog.getType(),
 				savedDog.getCallName(),
 				savedDog.getStatus(),
+				savedDog.getIsMainDog(),
 				savedDog.getCreatedAt(),
 				savedDog.getUpdatedAt(),
 				savedDog.getDeletedAt()
@@ -137,6 +145,7 @@ public class DogService {
 				dog.getType(),
 				dog.getCallName(),
 				dog.getStatus(),
+				dog.getIsMainDog(),
 				dog.getCreatedAt(),
 				dog.getUpdatedAt(),
 				dog.getDeletedAt()
@@ -168,6 +177,7 @@ public class DogService {
 			dog.getType(),
 			dog.getCallName(),
 			dog.getStatus(),
+			dog.getIsMainDog(),
 			dog.getCreatedAt(),
 			dog.getUpdatedAt(),
 			dog.getDeletedAt()
@@ -225,7 +235,12 @@ public class DogService {
 		);
 	}
 
-	// 강아지 성격 수정
+	/**
+	 * 📍 강아지 성격 수정
+	 * @param id 강아지 id
+	 * @param dto 강아지 id, 바꿀 성격 id 1, 바꿀 성격 id 2
+	 * @return 수정된 강아지 성격 정보 (id, 성격 조합 id, 바뀐 성격 이름, 수정 일자)
+	 */
 	@Transactional
 	public UpdateDogPersonalityResponseDto updateDogPersonality(Long id, UpdateDogPersonalityRequestDto dto) {
 		Dog dog = dogRepository.findById(id).orElseThrow(() ->
@@ -282,6 +297,36 @@ public class DogService {
 			personalityNames,
 			updatedDog.getUpdatedAt()
 		);
+	}
+
+	/**
+	 * 📍 대표 반려견 설정
+	 * @param id 강아지 id
+	 * @param userId 유저 id (로그인한 사용자 아이디로 추후 수정 예정)
+	 * @return 대표 강아지 정보 (id, 메인 강아지 여부)
+	 */
+	@Transactional
+	public UpdateDogIsMainResponseDto updateDogIsMain(Long dogId, Long userId) {
+
+		// 1. 해당 강아지가 유저 소유인지 확인
+		Dog selectedDog = dogRepository.findByIdAndUserIdAndDeletedAtIsNull(dogId, userId)
+			.orElseThrow(() -> new IllegalArgumentException("해당 강아지를 찾을 수 없습니다."));
+
+		// 2. 기존 대표 강아지를 찾아서 비대표로 설정
+		dogRepository.findByUserIdAndIsMainDogAndDeletedAtIsNull(userId, 1)
+			.ifPresent(existingMain -> {
+				if (!existingMain.getId().equals(selectedDog.getId())) {
+					existingMain.setIsMainDog(0);
+					dogRepository.save(existingMain);
+				}
+			});
+
+		// 3. 선택한 강아지를 대표로 설정
+		selectedDog.setIsMainDog(1);
+		Dog updatedDog = dogRepository.save(selectedDog);
+
+		// 4. 결과 반환
+		return new UpdateDogIsMainResponseDto(updatedDog.getId(), 1);
 	}
 
 	/**

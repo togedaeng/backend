@@ -59,6 +59,10 @@ public class Dog {
 	@Enumerated(EnumType.STRING)
 	private Status status;
 
+	// 대표 반려견
+	@Column(name = "is_main_dog")
+	private int isMainDog;
+
 	// 등록일
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
