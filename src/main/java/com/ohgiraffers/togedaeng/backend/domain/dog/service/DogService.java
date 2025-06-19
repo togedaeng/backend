@@ -25,6 +25,7 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameRe
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogPersonalityResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
+import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Step;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
 import com.ohgiraffers.togedaeng.backend.domain.personality.entity.PersonalityCombination;
 import com.ohgiraffers.togedaeng.backend.domain.personality.repository.DogPersonalityRepository;
@@ -101,6 +102,7 @@ public class DogService {
 				.type(dto.getType())
 				.callName(dto.getCallName())
 				.status(dto.getStatus())
+				.step(Step.PUPPY)
 				.isMainDog(isMainDog)
 				.createdAt(LocalDateTime.now())
 				.build();
@@ -128,6 +130,7 @@ public class DogService {
 				savedDog.getType(),
 				savedDog.getCallName(),
 				savedDog.getStatus(),
+				savedDog.getStep(),
 				savedDog.getIsMainDog(),
 				savedDog.getCreatedAt(),
 				savedDog.getUpdatedAt(),
@@ -159,6 +162,7 @@ public class DogService {
 				dog.getType(),
 				dog.getCallName(),
 				dog.getStatus(),
+				dog.getStep(),
 				dog.getIsMainDog(),
 				dog.getCreatedAt(),
 				dog.getUpdatedAt(),
@@ -191,6 +195,7 @@ public class DogService {
 			dog.getType(),
 			dog.getCallName(),
 			dog.getStatus(),
+			dog.getStep(),
 			dog.getIsMainDog(),
 			dog.getCreatedAt(),
 			dog.getUpdatedAt(),

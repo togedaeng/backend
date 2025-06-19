@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
+import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Step;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Type;
 
 import lombok.AllArgsConstructor;
@@ -25,6 +26,7 @@ public class DogResponseDto {
 	private Type type;
 	private String callName;
 	private Status status;
+	private Step step;
 	private int isMainDog;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;

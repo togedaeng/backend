@@ -59,6 +59,9 @@ public class Dog {
 	@Enumerated(EnumType.STRING)
 	private Status status;
 
+	@Enumerated(EnumType.STRING)
+	private Step step;
+
 	// 대표 반려견
 	@Column(name = "is_main_dog")
 	private int isMainDog;
