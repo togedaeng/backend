@@ -7,7 +7,7 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Type;
 
-public class DogResponseDto {
+public class CreateDogResponseDto {
 
 	private Long id;
 	private Long userId;
@@ -22,10 +22,10 @@ public class DogResponseDto {
 	private LocalDateTime updatedAt;
 	private LocalDateTime deletedAt;
 
-	public DogResponseDto() {
+	public CreateDogResponseDto() {
 	}
 
-	public DogResponseDto(Long id, Long userId, Long personalityCombinationId, String name, Gender gender,
+	public CreateDogResponseDto(Long id, Long userId, Long personalityCombinationId, String name, Gender gender,
 		LocalDate birth,
 		Type type, String callName, Status status, LocalDateTime createdAt, LocalDateTime updatedAt,
 		LocalDateTime deletedAt) {

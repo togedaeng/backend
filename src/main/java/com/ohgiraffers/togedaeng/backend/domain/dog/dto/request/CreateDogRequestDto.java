@@ -13,13 +13,28 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class DogRequestDto {
+public class CreateDogRequestDto {
 
 	private Long userId;
-	private Long personalityCombinationId;
 	private String name;
 	private Gender gender;
 	private Type type;
 	private String callName;
 	private Status status;
+	private Long personalityId1; // 필수 성격 1
+	private Long personalityId2; // 선택 성격 2
+
+	@Override
+	public String toString() {
+		return "DogRequestDto{" +
+			"userId=" + userId +
+			", name='" + name + '\'' +
+			", gender=" + gender +
+			", type=" + type +
+			", callName='" + callName + '\'' +
+			", status=" + status +
+			", personalityId1=" + personalityId1 +
+			", personalityId2=" + personalityId2 +
+			'}';
+	}
 }
