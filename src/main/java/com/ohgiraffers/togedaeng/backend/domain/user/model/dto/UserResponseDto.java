@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
+import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,5 +23,6 @@ public class UserResponseDto {
 	private Gender gender;
 	private LocalDate birth;
 	private String email;
+	private Status status;
 	private LocalDateTime createdAt;
 }

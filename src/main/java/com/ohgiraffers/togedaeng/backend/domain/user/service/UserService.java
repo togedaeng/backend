@@ -16,6 +16,8 @@ import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.User;
 import com.ohgiraffers.togedaeng.backend.domain.user.repository.UserRepository;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class UserService {
 
@@ -32,6 +34,7 @@ public class UserService {
 	 * @param dto 회원 정보 등록 DTO
 	 * @return 등록된 회원 DTO 변환
 	 */
+	@Transactional
 	public UserResponseDto createUser(UserInfoRequestDto dto) {
 		try {
 			User user = User.builder()
@@ -44,7 +47,7 @@ public class UserService {
 				.build();
 
 			User savedUser = userRepository.save(user);
-			log.info("Creating new user: {}", dto.getNickname());
+			log.info("생성된 사용자의 닉네임: {}", dto.getNickname());
 
 			return new UserResponseDto(
 				savedUser.getId(),
@@ -52,6 +55,7 @@ public class UserService {
 				savedUser.getGender(),
 				savedUser.getBirth(),
 				savedUser.getEmail(),
+				savedUser.getStatus(),
 				savedUser.getCreatedAt()
 			);
 		} catch (Exception e) {
@@ -61,7 +65,7 @@ public class UserService {
 	}
 
 	/**
-	 * 📍 회원 전체 조회
+	 * 📍 회원 전체 조회(관리자용)
 	 * @return 모든 회원 리스트
 	 */
 	public List<UserResponseDto> getAllUsers() {
@@ -75,23 +79,24 @@ public class UserService {
 				user.getGender(),
 				user.getBirth(),
 				user.getEmail(),
+				user.getStatus(),
 				user.getCreatedAt()
 			));
 		}
 
-		log.info("Get all users: {}", userResponseDtos);
+		log.info("모든 사용자 조회: {}", userResponseDtos);
 
 		return userResponseDtos;
 	}
 
 	/**
-	 * 📍 회원 단일 조회
+	 * 📍 회원 단일 조회(관리자용)
 	 * @param id 회원 id
 	 * @return 회원 정보 DTO 변환
 	 */
 	public UserResponseDto getUserById(Long id) {
 		User user = userRepository.findById(id).orElse(null);
-		log.info("Get user by id: {}", id);
+		log.info("조회할 사용자 ID: {}", id);
 
 		if (user == null) {
 			return null;
@@ -103,6 +108,7 @@ public class UserService {
 			user.getGender(),
 			user.getBirth(),
 			user.getEmail(),
+			user.getStatus(),
 			user.getCreatedAt()
 		);
 	}
@@ -113,11 +119,12 @@ public class UserService {
 	 * @param dto 수정할 닉네임
 	 * @return 수정된 회원 정보
 	 */
+	@Transactional
 	public UserResponseDto updateUserNickname(Long id, UserNicknameUpdateDto dto) {
 		User user = userRepository.findById(id).orElseThrow(() ->
-			new IllegalArgumentException("User not found"));
+			new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-		log.info("Update user nickname: {}", dto.getNickname());
+		log.info("수정된 사용자 닉네임: {}", dto.getNickname());
 
 		user.setNickname(dto.getNickname());
 		user.setUpdatedAt(LocalDateTime.now());
@@ -130,6 +137,7 @@ public class UserService {
 			updatedUser.getGender(),
 			updatedUser.getBirth(),
 			updatedUser.getEmail(),
+			updatedUser.getStatus(),
 			updatedUser.getCreatedAt()
 		);
 	}
@@ -139,21 +147,23 @@ public class UserService {
 	 * @param id 회원 id
 	 * @return 삭제된 회원 정보 (id, 닉네임, 상태(INACTIVE), 삭제일자)
 	 */
+	@Transactional
 	public DeleteUserResponseDto deleteUser(Long id) {
 		// 유효성 검증: ID가 유효한지 확인
 		if (id == null) {
-			throw new IllegalArgumentException("User ID cannot be null");
+			throw new IllegalArgumentException("요청할 사용자 정보가 없습니다.");
 		}
 
 		User user = userRepository.findById(id).orElseThrow(() ->
-			new IllegalArgumentException("User not found"));
+			new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
 		// 유효성 검증: 이미 INACTIVE 상태인지 확인
+		// 이미 INACTIVE 일 때는 삭제 못하게 하고, 그래도 같은 요청이 들어왔을시에는 익셉션처리를 해줘야 함
 		if (user.getStatus() == Status.INACTIVE) {
-			throw new IllegalArgumentException("User is already inactive");
+			throw new IllegalArgumentException("이미 비활성화 된 회원입니다.");
 		}
 
-		log.info("Delete user: {}", id);
+		log.info("탈퇴/차단된 사용자: {}", id);
 
 		user.setStatus(Status.INACTIVE);
 		user.setDeletedAt(LocalDateTime.now());
