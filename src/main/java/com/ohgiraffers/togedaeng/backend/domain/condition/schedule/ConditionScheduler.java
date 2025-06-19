@@ -38,9 +38,7 @@ public class ConditionScheduler {
 			if (duration.toHours() >= 2) {
 				c.setWaterful(Math.max(c.getWaterful() - 5, 0));
 			}
-			if (duration.toHours() >= 24) {
-				c.setAffection(Math.max(c.getAffection() - 30, 0));
-			} else if (duration.toHours() >= 6) {
+			if (duration.toHours() >= 6) {
 				c.setAffection(Math.max(c.getAffection() - 10, 0));
 			}
 

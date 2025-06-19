@@ -114,7 +114,7 @@ public class DogService {
 			condition.setDogId(savedDog.getId());
 			condition.setFullness(50);
 			condition.setWaterful(50);
-			condition.setAffection(30);
+			condition.setAffection(50);
 			condition.setLevel(1);
 			condition.setExp(0);
 			condition.setUpdatedAt(LocalDateTime.now());
