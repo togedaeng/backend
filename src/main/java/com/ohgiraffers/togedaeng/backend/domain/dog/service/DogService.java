@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.ohgiraffers.togedaeng.backend.domain.condition.entity.Condition;
+import com.ohgiraffers.togedaeng.backend.domain.condition.repository.ConditionRepository;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DeleteDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
@@ -38,12 +40,14 @@ public class DogService {
 	private final DogRepository dogRepository;
 	private final PersonalityCombinationRepository personalityCombinationRepository;
 	private final DogPersonalityRepository dogPersonalityRepository;
+	private final ConditionRepository conditionRepository;
 
 	public DogService(DogRepository dogRepository, PersonalityCombinationRepository personalityCombinationRepository,
-		DogPersonalityRepository dogPersonalityRepository) {
+		DogPersonalityRepository dogPersonalityRepository, ConditionRepository conditionRepository) {
 		this.dogRepository = dogRepository;
 		this.personalityCombinationRepository = personalityCombinationRepository;
 		this.dogPersonalityRepository = dogPersonalityRepository;
+		this.conditionRepository = conditionRepository;
 	}
 
 	/**
@@ -103,6 +107,16 @@ public class DogService {
 
 			Dog savedDog = dogRepository.save(dog);
 			log.info("Creating new dog: {}", dto.getName());
+
+			Condition condition = new Condition();
+			condition.setDogId(savedDog.getId());
+			condition.setFullness(50);
+			condition.setWaterful(50);
+			condition.setAffection(30);
+			condition.setLevel(1);
+			condition.setExp(0);
+			condition.setUpdatedAt(LocalDateTime.now());
+			conditionRepository.save(condition);
 
 			return new CreateDogResponseDto(
 				savedDog.getId(),
@@ -301,7 +315,7 @@ public class DogService {
 
 	/**
 	 * 📍 대표 반려견 설정
-	 * @param id 강아지 id
+	 * @param dogId 강아지 id
 	 * @param userId 유저 id (로그인한 사용자 아이디로 추후 수정 예정)
 	 * @return 대표 강아지 정보 (id, 메인 강아지 여부)
 	 */
