@@ -1,7 +1,6 @@
 package com.ohgiraffers.togedaeng.backend.domain.dog.dto.request;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
-import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,8 +17,6 @@ public class CreateDogRequestDto {
 	private String name;
 	private Gender gender;
 	private String callName;
-	private Status status;
-	private int isMainDog;
 	private Long personalityId1; // 필수 성격 1
 	private Long personalityId2; // 선택 성격 2
 
@@ -30,8 +27,6 @@ public class CreateDogRequestDto {
 			", name='" + name + '\'' +
 			", gender=" + gender +
 			", callName='" + callName + '\'' +
-			", status=" + status +
-			", isMainDog=" + isMainDog +
 			", personalityId1=" + personalityId1 +
 			", personalityId2=" + personalityId2 +
 			'}';
