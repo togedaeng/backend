@@ -47,10 +47,6 @@ public class Dog {
 	// 반려견 생년월일
 	private LocalDate birth;
 
-	// 강아지 타입
-	@Enumerated(EnumType.STRING)
-	private Type type;
-
 	// 주인을 부르는 애칭
 	@Column(name = "call_name")
 	private String callName;
@@ -58,13 +54,6 @@ public class Dog {
 	// 강아지 상태
 	@Enumerated(EnumType.STRING)
 	private Status status;
-
-	@Enumerated(EnumType.STRING)
-	private Step step;
-
-	// 대표 반려견
-	@Column(name = "is_main_dog")
-	private int isMainDog;
 
 	// 등록일
 	@Column(name = "created_at")

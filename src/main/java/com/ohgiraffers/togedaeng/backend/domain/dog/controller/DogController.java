@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
@@ -24,7 +23,6 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.CreateDogRespon
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DeleteDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNameResponseDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogIsMainResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogPersonalityResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.service.DogService;
@@ -118,20 +116,6 @@ public class DogController {
 		UpdateDogPersonalityResponseDto dog = dogService.updateDogPersonality(id, updateDogPersonalityRequestDto);
 		return new ResponseEntity<>(dog, HttpStatus.OK);
 
-	}
-
-	/**
-	 * 📍 대표 반려견 설정
-	 * @param id 강아지 id
-	 * @param userId 유저 id (로그인한 사용자 아이디로 추후 수정 예정)
-	 * @return 대표 강아지 정보 (id, 메인 강아지 여부)
-	 */
-	@PatchMapping("/{id}/main-dog")
-	public ResponseEntity<UpdateDogIsMainResponseDto> updateDogIsMain(@PathVariable("id") Long id,
-		@RequestParam Long userId) {
-		log.info("Update dog main dog: {}", id);
-		UpdateDogIsMainResponseDto dog = dogService.updateDogIsMain(id, userId);
-		return new ResponseEntity<>(dog, HttpStatus.OK);
 	}
 
 	/**

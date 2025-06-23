@@ -37,12 +37,6 @@ public class Condition {
 	// 친밀도
 	private int affection;
 
-	// 반려견레벨
-	private int level;
-
-	// 경험치
-	private int exp;
-
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 
