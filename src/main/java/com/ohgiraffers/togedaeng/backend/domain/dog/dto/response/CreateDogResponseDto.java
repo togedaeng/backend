@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
-import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,7 +21,6 @@ public class CreateDogResponseDto {
 	private Gender gender;
 	private LocalDate birth;
 	private String callName;
-	private Status status;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 	private LocalDateTime deletedAt;
