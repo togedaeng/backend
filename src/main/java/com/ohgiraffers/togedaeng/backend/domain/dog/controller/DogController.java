@@ -103,7 +103,12 @@ public class DogController {
 		return new ResponseEntity<>(dog, HttpStatus.OK);
 	}
 
-	// 강아지 성격 수정
+	/**
+	 * 📍 강아지 성격 수정
+	 * @param id 강아지 id
+	 * @param updateDogPersonalityRequestDto 강아지 id, 바꿀 성격 id 1, 바꿀 성격 id 2
+	 * @return 수정된 강아지 성격 정보 (id, 성격 조합 id, 바뀐 성격 이름, 수정 일자)
+	 */
 	@PatchMapping("/{id}/personality")
 	public ResponseEntity<UpdateDogPersonalityResponseDto> updateDogPersonality(@PathVariable("id") Long id,
 		@RequestBody UpdateDogPersonalityRequestDto updateDogPersonalityRequestDto) {

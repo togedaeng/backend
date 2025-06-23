@@ -2,23 +2,13 @@ package com.ohgiraffers.togedaeng.backend.domain.dog.dto.request;
 
 public class UpdateDogCallNameRequestDto {
 
-	private Long dogId;
 	private String newCallName;
 
 	public UpdateDogCallNameRequestDto() {
 	}
 
-	public UpdateDogCallNameRequestDto(Long dogId, String newCallName) {
-		this.dogId = dogId;
+	public UpdateDogCallNameRequestDto(String newCallName) {
 		this.newCallName = newCallName;
-	}
-
-	public Long getDogId() {
-		return dogId;
-	}
-
-	public void setDogId(Long dogId) {
-		this.dogId = dogId;
 	}
 
 	public String getNewCallName() {
@@ -32,7 +22,6 @@ public class UpdateDogCallNameRequestDto {
 	@Override
 	public String toString() {
 		return "UpdateDogCallNameRequestDto{" +
-			"dogId=" + dogId +
 			", newCallName='" + newCallName + '\'' +
 			'}';
 	}

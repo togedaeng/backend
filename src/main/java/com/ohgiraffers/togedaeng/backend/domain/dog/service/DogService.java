@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.ohgiraffers.togedaeng.backend.domain.condition.entity.Condition;
+import com.ohgiraffers.togedaeng.backend.domain.condition.repository.ConditionRepository;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DeleteDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
@@ -37,12 +39,14 @@ public class DogService {
 	private final DogRepository dogRepository;
 	private final PersonalityCombinationRepository personalityCombinationRepository;
 	private final DogPersonalityRepository dogPersonalityRepository;
+	private final ConditionRepository conditionRepository;
 
 	public DogService(DogRepository dogRepository, PersonalityCombinationRepository personalityCombinationRepository,
-		DogPersonalityRepository dogPersonalityRepository) {
+		DogPersonalityRepository dogPersonalityRepository, ConditionRepository conditionRepository) {
 		this.dogRepository = dogRepository;
 		this.personalityCombinationRepository = personalityCombinationRepository;
 		this.dogPersonalityRepository = dogPersonalityRepository;
+		this.conditionRepository = conditionRepository;
 	}
 
 	/**
@@ -80,7 +84,7 @@ public class DogService {
 				newCombo.setPersonalityId2(second); // p2가 null이면 null 저장됨
 				return personalityCombinationRepository.save(newCombo);
 			});
-
+		
 		try {
 			Dog dog = Dog.builder()
 				.userId(dto.getUserId())
@@ -88,7 +92,6 @@ public class DogService {
 				.name(dto.getName())
 				.gender(dto.getGender())
 				.birth(LocalDate.now())
-				.type(dto.getType())
 				.callName(dto.getCallName())
 				.status(dto.getStatus())
 				.createdAt(LocalDateTime.now())
@@ -97,6 +100,14 @@ public class DogService {
 			Dog savedDog = dogRepository.save(dog);
 			log.info("Creating new dog: {}", dto.getName());
 
+			Condition condition = new Condition();
+			condition.setDogId(savedDog.getId());
+			condition.setFullness(50);
+			condition.setWaterful(50);
+			condition.setAffection(50);
+			condition.setUpdatedAt(LocalDateTime.now());
+			conditionRepository.save(condition);
+
 			return new CreateDogResponseDto(
 				savedDog.getId(),
 				savedDog.getUserId(),
@@ -104,7 +115,6 @@ public class DogService {
 				savedDog.getName(),
 				savedDog.getGender(),
 				savedDog.getBirth(),
-				savedDog.getType(),
 				savedDog.getCallName(),
 				savedDog.getStatus(),
 				savedDog.getCreatedAt(),
@@ -134,7 +144,6 @@ public class DogService {
 				dog.getName(),
 				dog.getGender(),
 				dog.getBirth(),
-				dog.getType(),
 				dog.getCallName(),
 				dog.getStatus(),
 				dog.getCreatedAt(),
@@ -165,7 +174,6 @@ public class DogService {
 			dog.getName(),
 			dog.getGender(),
 			dog.getBirth(),
-			dog.getType(),
 			dog.getCallName(),
 			dog.getStatus(),
 			dog.getCreatedAt(),
@@ -225,7 +233,12 @@ public class DogService {
 		);
 	}
 
-	// 강아지 성격 수정
+	/**
+	 * 📍 강아지 성격 수정
+	 * @param id 강아지 id
+	 * @param dto 강아지 id, 바꿀 성격 id 1, 바꿀 성격 id 2
+	 * @return 수정된 강아지 성격 정보 (id, 성격 조합 id, 바뀐 성격 이름, 수정 일자)
+	 */
 	@Transactional
 	public UpdateDogPersonalityResponseDto updateDogPersonality(Long id, UpdateDogPersonalityRequestDto dto) {
 		Dog dog = dogRepository.findById(id).orElseThrow(() ->
