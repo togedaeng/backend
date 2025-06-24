@@ -8,6 +8,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DeleteDogRequestDto;
@@ -21,7 +22,9 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNa
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogPersonalityResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
+import com.ohgiraffers.togedaeng.backend.domain.dog.entity.DogImage;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
+import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogImageRepository;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
 import com.ohgiraffers.togedaeng.backend.domain.personality.entity.PersonalityCombination;
 import com.ohgiraffers.togedaeng.backend.domain.personality.repository.DogPersonalityRepository;
@@ -37,12 +40,17 @@ public class DogService {
 	private final DogRepository dogRepository;
 	private final PersonalityCombinationRepository personalityCombinationRepository;
 	private final DogPersonalityRepository dogPersonalityRepository;
+	private final DogImageRepository dogImageRepository;
+	private final S3Uploader s3Uploader;
 
 	public DogService(DogRepository dogRepository, PersonalityCombinationRepository personalityCombinationRepository,
-		DogPersonalityRepository dogPersonalityRepository) {
+		DogPersonalityRepository dogPersonalityRepository, DogImageRepository dogImageRepository,
+		S3Uploader s3Uploader) {
 		this.dogRepository = dogRepository;
 		this.personalityCombinationRepository = personalityCombinationRepository;
 		this.dogPersonalityRepository = dogPersonalityRepository;
+		this.dogImageRepository = dogImageRepository;
+		this.s3Uploader = s3Uploader;
 	}
 
 	/**
@@ -51,7 +59,7 @@ public class DogService {
 	 * @return 등록된 강아지 DTO 변환
 	 */
 	@Transactional
-	public CreateDogResponseDto createDog(CreateDogRequestDto dto) {
+	public CreateDogResponseDto createDog(CreateDogRequestDto dto, List<MultipartFile> images) {
 
 		// 유저 아이디로 유저 정보 찾기
 
@@ -95,6 +103,18 @@ public class DogService {
 
 			Dog savedDog = dogRepository.save(dog);
 			log.info("Creating new dog: {}", dto.getName());
+
+			// 이미지 업로드 처리
+			for (MultipartFile file : images) {
+				String imageUrl = s3Uploader.upload(file, "dog-images");
+
+				DogImage dogImage = new DogImage();
+				dogImage.setDogId(savedDog.getId());
+				dogImage.setImageUrl(imageUrl);
+				dogImage.setUploadedAt(LocalDateTime.now());
+
+				dogImageRepository.save(dogImage);
+			}
 
 			return new CreateDogResponseDto(
 				savedDog.getId(),
@@ -144,7 +164,35 @@ public class DogService {
 		return dogResponseDtos;
 	}
 
-	// 상태 waiting인 강아지 전체 조회
+	/**
+	 * 📍 웨이팅중인 강아지 전체 조회
+	 * @return 대기 상태의 강아지 리스트
+	 */
+	@Transactional
+	public List<DogResponseDto> getWaitingDogs() {
+		List<Dog> dogs = dogRepository.findByStatus(Status.WAITING);
+		List<DogResponseDto> dogResponseDtos = new ArrayList<>();
+
+		for (Dog dog : dogs) {
+			dogResponseDtos.add(new DogResponseDto(
+				dog.getId(),
+				dog.getUserId(),
+				dog.getPersonalityCombinationId(),
+				dog.getName(),
+				dog.getGender(),
+				dog.getBirth(),
+				dog.getCallName(),
+				dog.getStatus(),
+				dog.getCreatedAt(),
+				dog.getUpdatedAt(),
+				dog.getDeletedAt()
+			));
+		}
+
+		return dogResponseDtos;
+	}
+
+	// 강아지 렌더링 완료 및 상태 변경
 
 	/**
 	 * 📍 강아지 단일 조회

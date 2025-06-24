@@ -5,6 +5,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -12,7 +13,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DeleteDogRequestDto;
@@ -38,17 +41,16 @@ public class DogController {
 		this.dogService = dogService;
 	}
 
-	// 기본 강아지 등록 (커스텀 강아지 등록은 커스텀에다가 따로 추가하기)
-
 	/**
-	 * 📍 기본 강아지 등록
+	 * 📍 강아지 등록 (커스텀 요청)
 	 * @param dogRequestDto 강아지 등록 DTO
 	 * @return 등록된 강아지 정보
 	 */
-	@PostMapping("/create")
-	public ResponseEntity<CreateDogResponseDto> createDog(@RequestBody CreateDogRequestDto dogRequestDto) {
+	@PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<CreateDogResponseDto> createDog(@RequestPart("dog") CreateDogRequestDto dogRequestDto,
+		@RequestPart("images") List<MultipartFile> images) {
 		log.info("Create dog request: {}", dogRequestDto);
-		CreateDogResponseDto createDogResponseDto = dogService.createDog(dogRequestDto);
+		CreateDogResponseDto createDogResponseDto = dogService.createDog(dogRequestDto, images);
 		return new ResponseEntity<>(createDogResponseDto, HttpStatus.CREATED);
 	}
 
@@ -63,6 +65,19 @@ public class DogController {
 		return new ResponseEntity<>(dogs, HttpStatus.OK);
 	}
 
+	/**
+	 * 📍 웨이팅중인 강아지 전체 조회
+	 * @return 대기 상태의 강아지 리스트
+	 */
+	@GetMapping("/waiting")
+	public ResponseEntity<List<DogResponseDto>> getWaitingDogs() {
+		log.info("Get all waiting dogs");
+		List<DogResponseDto> dogs = dogService.getWaitingDogs();
+		return new ResponseEntity<>(dogs, HttpStatus.OK);
+	}
+
+	// 강아지 렌더링 완료 및 상태 변경
+	
 	/**
 	 * 📍 강아지 단일 조회
 	 * @param id 강아지 id
