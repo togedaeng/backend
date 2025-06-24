@@ -10,5 +10,16 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SendSlackNotifyRequestDto {
-	private String message;
+	private String nickname;
+	private String waitingCount;
+
+	@Override
+	public String toString() {
+		return "SendSlackNotifyRequestDto{" +
+			"nickname='" + nickname + '\'' +
+			", waitingCount='" + waitingCount + '\'' +
+			'}';
+	}
 }
+
+

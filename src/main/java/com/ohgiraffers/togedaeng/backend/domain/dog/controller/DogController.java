@@ -29,6 +29,7 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNa
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogPersonalityResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.service.DogService;
+import com.ohgiraffers.togedaeng.backend.domain.notification.service.SlackNotificationService;
 
 @RestController
 @RequestMapping("/api/dog")
@@ -36,9 +37,11 @@ public class DogController {
 	Logger log = LoggerFactory.getLogger(DogController.class);
 
 	private final DogService dogService;
+	private final SlackNotificationService slackNotificationService;
 
-	public DogController(DogService dogService) {
+	public DogController(DogService dogService, SlackNotificationService slackNotificationService) {
 		this.dogService = dogService;
+		this.slackNotificationService = slackNotificationService;
 	}
 
 	/**
@@ -51,6 +54,8 @@ public class DogController {
 		@RequestPart("images") List<MultipartFile> images) {
 		log.info("Create dog request: {}", dogRequestDto);
 		CreateDogResponseDto createDogResponseDto = dogService.createDog(dogRequestDto, images);
+		// DB에 강아지 등록이 되었을 경우 슬랙에 알림 전송
+		slackNotificationService.sendSlackNotification(createDogResponseDto);
 		return new ResponseEntity<>(createDogResponseDto, HttpStatus.CREATED);
 	}
 
@@ -77,7 +82,7 @@ public class DogController {
 	}
 
 	// 강아지 렌더링 완료 및 상태 변경
-	
+
 	/**
 	 * 📍 강아지 단일 조회
 	 * @param id 강아지 id

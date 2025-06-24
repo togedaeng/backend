@@ -19,16 +19,4 @@ spring:
 
   slack:
     webhook_url: ${SLACK_WEBHOOK_URL}
-    
-#cloud:
-#  aws:
-#    s3:
-#      bucket: <S3 ?? ??>
-#    credentials:
-#      access-key: <????? ??? ?>
-#      secret-key: <????? ?? ??? ?>
-#    region:
-#      static: ap-northeast-2
-#      auto: false
-#    stack:
-#      auto: false
+

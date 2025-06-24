@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.CreateDogResponseDto;
 import com.slack.api.Slack;
 import com.slack.api.webhook.Payload;
 import com.slack.api.webhook.WebhookResponse;
@@ -21,10 +22,15 @@ public class SlackNotificationService {
 
 	/**
 	 * Slack 메세지 전송
-	 *
-	 * @param paramText 전송 메세지
+	 * @param createDogResponseDto 등록된 강아지 DTO
 	 */
-	public void sendSlackNotification(String paramText) {
+	public void sendSlackNotification(CreateDogResponseDto createDogResponseDto) {
+		/*
+		 * 이런 알람이 가도록 해야함.
+		 * “[nickname]의 커스텀 요청이 들어왔습니다.
+		 * 현재 대기 중인 커스텀 요청 수 : 7”
+		 * */
+		String paramText = createDogResponseDto.getName();
 		Payload payload = Payload.builder().text(paramText).build();
 		try {
 			WebhookResponse response = slack.send(webhookUrl, payload);
