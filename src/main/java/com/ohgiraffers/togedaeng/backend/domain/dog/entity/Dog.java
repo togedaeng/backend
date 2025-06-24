@@ -55,10 +55,6 @@ public class Dog {
 	@Enumerated(EnumType.STRING)
 	private Status status;
 
-	// 원본 이미지 URL
-	@Column(name = "image_url")
-	private String imageUrl;
-
 	// 렌더링 이미지 URL
 	@Column(name = "rendered_url")
 	private String renderedUrl;
