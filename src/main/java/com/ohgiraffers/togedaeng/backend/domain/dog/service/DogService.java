@@ -129,8 +129,8 @@ public class DogService {
 				savedDog.getDeletedAt()
 			);
 		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
+			log.error("강아지 등록 중 오류 발생", e);
+			throw new RuntimeException("강아지 등록 실패");
 		}
 	}
 
