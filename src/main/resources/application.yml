@@ -17,6 +17,9 @@ spring:
         format_sql: true
     database-platform: org.hibernate.dialect.MySQLDialect
 
+  slack:
+    webhook_url: ${SLACK_WEBHOOK_URL}
+    
 #cloud:
 #  aws:
 #    s3:

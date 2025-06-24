@@ -30,6 +30,7 @@ dependencies {
     annotationProcessor('org.projectlombok:lombok')
     testAnnotationProcessor('org.projectlombok:lombok')
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation 'com.slack.api:slack-api-client:1.43.0'
 }
 
 tasks.named('test') {
