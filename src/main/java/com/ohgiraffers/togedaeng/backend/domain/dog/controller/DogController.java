@@ -65,10 +65,19 @@ public class DogController {
 		return new ResponseEntity<>(dogs, HttpStatus.OK);
 	}
 
-	// 웨이팅중인 강아지 전체 조회
+	/**
+	 * 📍 웨이팅중인 강아지 전체 조회
+	 * @return 대기 상태의 강아지 리스트
+	 */
+	@GetMapping("/waiting")
+	public ResponseEntity<List<DogResponseDto>> getWaitingDogs() {
+		log.info("Get all waiting dogs");
+		List<DogResponseDto> dogs = dogService.getWaitingDogs();
+		return new ResponseEntity<>(dogs, HttpStatus.OK);
+	}
 
-	// 렌더링 완료된 강아지
-
+	// 강아지 렌더링 완료 및 상태 변경
+	
 	/**
 	 * 📍 강아지 단일 조회
 	 * @param id 강아지 id

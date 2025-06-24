@@ -164,7 +164,33 @@ public class DogService {
 		return dogResponseDtos;
 	}
 
-	// 상태 waiting인 강아지 전체 조회
+	/**
+	 * 📍 웨이팅중인 강아지 전체 조회
+	 * @return 대기 상태의 강아지 리스트
+	 */
+	@Transactional
+	public List<DogResponseDto> getWaitingDogs() {
+		List<Dog> dogs = dogRepository.findByStatus(Status.WAITING);
+		List<DogResponseDto> dogResponseDtos = new ArrayList<>();
+
+		for (Dog dog : dogs) {
+			dogResponseDtos.add(new DogResponseDto(
+				dog.getId(),
+				dog.getUserId(),
+				dog.getPersonalityCombinationId(),
+				dog.getName(),
+				dog.getGender(),
+				dog.getBirth(),
+				dog.getCallName(),
+				dog.getStatus(),
+				dog.getCreatedAt(),
+				dog.getUpdatedAt(),
+				dog.getDeletedAt()
+			));
+		}
+
+		return dogResponseDtos;
+	}
 
 	// 강아지 렌더링 완료 및 상태 변경
 
