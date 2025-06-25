@@ -24,7 +24,7 @@ public class SlackNotificationService {
 	private final UserRepository userRepository;
 	private final DogService dogService;
 
-	@Value("${slack.webhook-url}")
+	@Value("${spring.slack.webhook_url}")
 	private String webhookUrl;
 
 	public SlackNotificationService(UserRepository userRepository, DogService dogService) {
@@ -37,11 +37,6 @@ public class SlackNotificationService {
 	 * @param createDogResponseDto 등록된 강아지 DTO
 	 */
 	public void sendSlackNotification(CreateDogResponseDto createDogResponseDto) {
-		/*
-		 * 이런 알람이 가도록 해야함.
-		 * “[nickname]의 커스텀 요청이 들어왔습니다.
-		 * 현재 대기 중인 커스텀 요청 수 : 7”
-		 * */
 		Long userId = createDogResponseDto.getUserId();
 		User user = userRepository.findById(userId).orElse(null);
 		if (user == null) {
