@@ -10,11 +10,11 @@ import org.springframework.stereotype.Service;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.DeleteUserResponseDto;
-import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserInfoRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserNicknameUpdateDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.User;
 import com.ohgiraffers.togedaeng.backend.domain.user.repository.UserRepository;
+import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserInfoRequestDto;
 
 import jakarta.transaction.Transactional;
 
@@ -31,17 +31,23 @@ public class UserService {
 
 	/**
 	 * 📍 소셜 로그인 후 회원 정보 등록
-	 * @param dto 회원 정보 등록 DTO
+	 * @param dto 소셜 로그인 이후 받은 회원 정보
 	 * @return 등록된 회원 DTO 변환
 	 */
 	@Transactional
 	public UserResponseDto createUser(UserInfoRequestDto dto) {
+		// provider, providerId, email로 중복 회원 체크
+		if (userRepository.findByProviderAndProviderId(dto.getProvider(), dto.getProviderId()).isPresent()) {
+			throw new IllegalArgumentException("이미 가입된 회원입니다.");
+		}
 		try {
 			User user = User.builder()
 				.nickname(dto.getNickname())
 				.gender(dto.getGender())
 				.birth(dto.getBirth())
-				.email("temp@email.com") // TODO: 소셜 로그인에서 받아온 이메일로 수정
+				.email(dto.getEmail())
+				.provider(dto.getProvider())
+				.providerId(dto.getProviderId())
 				.status(Status.ACTIVE)
 				.createdAt(LocalDateTime.now())
 				.build();

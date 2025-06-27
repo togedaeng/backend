@@ -9,13 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.DeleteUserResponseDto;
-import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserInfoRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserNicknameUpdateDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.service.UserService;
@@ -29,18 +27,6 @@ public class UserController {
 
 	public UserController(UserService userService) {
 		this.userService = userService;
-	}
-
-	/**
-	 * 📍 소셜 로그인 후 회원 정보 등록
-	 * @param userInfoRequestDto 회원 정보 등록 DTO
-	 * @return 등록된 회원 정보
-	 */
-	@PostMapping("/create")
-	public ResponseEntity<UserResponseDto> createUser(@RequestBody UserInfoRequestDto userInfoRequestDto) {
-		log.info("Create user request: {}", userInfoRequestDto);
-		UserResponseDto userResponseDto = userService.createUser(userInfoRequestDto);
-		return new ResponseEntity<>(userResponseDto, HttpStatus.CREATED);
 	}
 
 	/**

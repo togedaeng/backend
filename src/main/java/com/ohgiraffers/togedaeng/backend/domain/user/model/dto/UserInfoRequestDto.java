@@ -16,6 +16,9 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 public class UserInfoRequestDto {
+	private String email;
+	private String provider;
+	private String providerId;
 	private String nickname;
 	private Gender gender;
 	private LocalDate birth;
