@@ -47,6 +47,12 @@ public class User {
 	@Column(name = "email", nullable = false)
 	private String email;
 
+	@Column(name = "provider", nullable = false)
+	private String provider;
+
+	@Column(name = "providerId", nullable = false)
+	private String providerId;
+
 	@Builder.Default
 	@Column(name = "role", nullable = false)
 	private Role role = Role.USER;
