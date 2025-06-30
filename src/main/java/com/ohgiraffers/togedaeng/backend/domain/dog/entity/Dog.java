@@ -52,6 +52,7 @@ public class Dog {
 	private String callName;
 
 	// 강아지 상태
+	@Column(length = 20)
 	@Enumerated(EnumType.STRING)
 	private Status status;
 
@@ -59,9 +60,13 @@ public class Dog {
 	@Column(name = "rendered_url")
 	private String renderedUrl;
 
-	// 등록일
+	// 커스텀 등록일
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
+
+	// 커스텀 완료일
+	@Column(name = "completed_at")
+	private LocalDateTime completedAt;
 
 	// 수정일
 	@Column(name = "updated_at")

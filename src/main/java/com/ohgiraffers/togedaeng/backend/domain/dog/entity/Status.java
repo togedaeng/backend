@@ -2,6 +2,8 @@ package com.ohgiraffers.togedaeng.backend.domain.dog.entity;
 
 public enum Status {
 	ACTIVE,
-	WAITING,
+	REJECTED,
+	REQUESTED,
+	HOLD,
 	INACTIVE
 }
