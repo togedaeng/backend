@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
-import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -58,7 +57,7 @@ public class User {
 	private Role role = Role.USER;
 
 	@Column(name = "status", nullable = false)
-	private Status status;
+	private UserStatus status;
 
 	@Builder.Default
 	@Column(name = "created_at", nullable = false)

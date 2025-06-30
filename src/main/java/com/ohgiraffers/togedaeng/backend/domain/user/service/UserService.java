@@ -8,12 +8,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.DeleteUserResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserInfoRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserNicknameUpdateDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.User;
+import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.UserStatus;
 import com.ohgiraffers.togedaeng.backend.domain.user.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
@@ -48,7 +48,7 @@ public class UserService {
 				.email(dto.getEmail())
 				.provider(dto.getProvider())
 				.providerId(dto.getProviderId())
-				.status(Status.ACTIVE)
+				.status(UserStatus.ACTIVE)
 				.createdAt(LocalDateTime.now())
 				.build();
 
@@ -153,9 +153,9 @@ public class UserService {
 	}
 
 	/**
-	 * 📍 회원 삭제
+	 * 📍 회원 탈퇴
 	 * @param id 회원 id
-	 * @return 삭제된 회원 정보 (id, 닉네임, 상태(INACTIVE), 삭제일자)
+	 * @return 탈퇴한 회원 정보 (id, 닉네임, 상태(DELETED), 삭제일자)
 	 */
 	@Transactional
 	public DeleteUserResponseDto deleteUser(Long id) {
@@ -169,13 +169,13 @@ public class UserService {
 
 		// 유효성 검증: 이미 INACTIVE 상태인지 확인
 		// 이미 INACTIVE 일 때는 삭제 못하게 하고, 그래도 같은 요청이 들어왔을시에는 익셉션처리를 해줘야 함
-		if (user.getStatus() == Status.INACTIVE) {
+		if (user.getStatus() == UserStatus.DELETED || user.getStatus() == UserStatus.BLOCKED) {
 			throw new IllegalArgumentException("이미 비활성화 된 회원입니다.");
 		}
 
 		log.info("탈퇴/차단된 사용자: {}", id);
 
-		user.setStatus(Status.INACTIVE);
+		user.setStatus(UserStatus.DELETED);
 		user.setDeletedAt(LocalDateTime.now());
 
 		User updatedUser = userRepository.save(user);
