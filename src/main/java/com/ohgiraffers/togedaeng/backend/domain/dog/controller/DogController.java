@@ -97,7 +97,7 @@ public class DogController {
 	}
 
 	/**
-	 * 📍 강아지 상태 변경 (REJECTED, HOLD)
+	 * 📍 강아지 상태 변경 (REJECTED, HOLD, INACTIVE)
 	 * @param id 강아지 ID
 	 * @param updateDogStatusRequestDto 유저 ID, 수정할 상태
 	 * @return 수정된 강아지 정보 (강아지 ID, 강아지 상태, 수정 시각)

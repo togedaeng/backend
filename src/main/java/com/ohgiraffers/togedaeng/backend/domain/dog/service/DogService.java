@@ -209,7 +209,7 @@ public class DogService {
 	}
 
 	/**
-	 * 📍 강아지 상태 변경 (REJECTED, HOLD)
+	 * 📍 강아지 상태 변경 (REJECTED, HOLD, INACTIVE)
 	 * @param id 강아지 ID
 	 * @param dto 유저 ID, 수정할 상태
 	 * @return 수정된 강아지 정보 (강아지 ID, 강아지 상태, 수정 시각)
@@ -223,9 +223,9 @@ public class DogService {
 
 		Status newStatus = dto.getNewStatus();
 
-		// 상태값 제한: REJECTED 또는 HOLD만 가능
-		if (newStatus != Status.REJECTED && newStatus != Status.HOLD) {
-			throw new IllegalArgumentException("Only REJECTED or HOLD status changes are allowed.");
+		// 상태값 제한: REJECTED, HOLD, INACTIVE만 가능
+		if (newStatus != Status.REJECTED && newStatus != Status.HOLD && newStatus != Status.INACTIVE) {
+			throw new IllegalArgumentException("Only REJECTED or HOLD or INACTIVE status changes are allowed.");
 		}
 
 		dog.setStatus(newStatus);
