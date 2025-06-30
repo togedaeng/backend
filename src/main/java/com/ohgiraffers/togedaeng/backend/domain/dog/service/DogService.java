@@ -1,5 +1,6 @@
 package com.ohgiraffers.togedaeng.backend.domain.dog.service;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -11,19 +12,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DeleteDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogPersonalityRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogStatusActiveRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogStatusRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.CreateDogResponseDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DeleteDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogPersonalityResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogStatusActiveResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogStatusResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.DogImage;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
+import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Type;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogImageRepository;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
 import com.ohgiraffers.togedaeng.backend.domain.personality.entity.PersonalityCombination;
@@ -59,7 +63,8 @@ public class DogService {
 	 * @return 등록된 강아지 DTO 변환
 	 */
 	@Transactional
-	public CreateDogResponseDto createDog(CreateDogRequestDto dto, List<MultipartFile> images) {
+	public CreateDogResponseDto createDog(CreateDogRequestDto dto, MultipartFile mainImage,
+		List<MultipartFile> subImages) {
 
 		// 유저 아이디로 유저 정보 찾기
 
@@ -97,23 +102,34 @@ public class DogService {
 				.gender(dto.getGender())
 				.birth(LocalDate.now())
 				.callName(dto.getCallName())
-				.status(Status.WAITING)
+				.status(Status.REQUESTED)
 				.createdAt(LocalDateTime.now())
 				.build();
 
 			Dog savedDog = dogRepository.save(dog);
 			log.info("Creating new dog: {}", dto.getName());
 
-			// 이미지 업로드 처리
-			for (MultipartFile file : images) {
-				String imageUrl = s3Uploader.upload(file, "dog-images");
+			// 1. 메인 이미지 업로드
+			String mainImageUrl = s3Uploader.upload(mainImage, "dog-images");
 
-				DogImage dogImage = new DogImage();
-				dogImage.setDogId(savedDog.getId());
-				dogImage.setImageUrl(imageUrl);
-				dogImage.setUploadedAt(LocalDateTime.now());
+			DogImage mainDogImage = new DogImage();
+			mainDogImage.setDogId(savedDog.getId());
+			mainDogImage.setImageUrl(mainImageUrl);
+			mainDogImage.setType(Type.MAIN);
+			mainDogImage.setCreatedAt(LocalDateTime.now());
 
-				dogImageRepository.save(dogImage);
+			dogImageRepository.save(mainDogImage);
+
+			// 2. 서브 이미지 업로드
+			for (MultipartFile file : subImages) {
+				String subImageUrl = s3Uploader.upload(file, "dog-images");
+
+				DogImage subDogImage = new DogImage();
+				subDogImage.setDogId(savedDog.getId());
+				subDogImage.setImageUrl(subImageUrl);
+				subDogImage.setType(Type.SUB);
+				subDogImage.setCreatedAt(LocalDateTime.now());
+				dogImageRepository.save(subDogImage);
 			}
 
 			return new CreateDogResponseDto(
@@ -129,8 +145,8 @@ public class DogService {
 				savedDog.getDeletedAt()
 			);
 		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
+			log.error("강아지 등록 중 오류 발생", e);
+			throw new RuntimeException("강아지 등록 실패");
 		}
 	}
 
@@ -165,12 +181,12 @@ public class DogService {
 	}
 
 	/**
-	 * 📍 웨이팅중인 강아지 전체 조회
-	 * @return 대기 상태의 강아지 리스트
+	 * 📍 요청 뱓은 강아지 전체 조회
+	 * @return 요청 상태의 강아지 리스트
 	 */
 	@Transactional
-	public List<DogResponseDto> getWaitingDogs() {
-		List<Dog> dogs = dogRepository.findByStatus(Status.WAITING);
+	public List<DogResponseDto> getRequestedDogs() {
+		List<Dog> dogs = dogRepository.findByStatus(Status.REQUESTED);
 		List<DogResponseDto> dogResponseDtos = new ArrayList<>();
 
 		for (Dog dog : dogs) {
@@ -192,7 +208,61 @@ public class DogService {
 		return dogResponseDtos;
 	}
 
-	// 강아지 렌더링 완료 및 상태 변경
+	/**
+	 * 📍 강아지 상태 변경 (REJECTED, HOLD)
+	 * @param id 강아지 ID
+	 * @param dto 유저 ID, 수정할 상태
+	 * @return 수정된 강아지 정보 (강아지 ID, 강아지 상태, 수정 시각)
+	 */
+	@Transactional
+	public UpdateDogStatusResponseDto updateDogStatus(Long id, UpdateDogStatusRequestDto dto) {
+		Dog dog = dogRepository.findById(id).orElseThrow(() ->
+			new IllegalArgumentException("Dog not found"));
+
+		log.info("Update dog status: {}", dto);
+
+		Status newStatus = dto.getNewStatus();
+
+		// 상태값 제한: REJECTED 또는 HOLD만 가능
+		if (newStatus != Status.REJECTED && newStatus != Status.HOLD) {
+			throw new IllegalArgumentException("Only REJECTED or HOLD status changes are allowed.");
+		}
+
+		dog.setStatus(newStatus);
+		dog.setUpdatedAt(LocalDateTime.now());
+
+		Dog updatedDog = dogRepository.save(dog);
+
+		return new UpdateDogStatusResponseDto(
+			updatedDog.getId(),
+			updatedDog.getStatus(),
+			updatedDog.getUpdatedAt()
+		);
+	}
+
+	@Transactional
+	public UpdateDogStatusActiveResponseDto updateDogStatusActive(Long id, UpdateDogStatusActiveRequestDto dto) throws
+		IOException {
+		Dog dog = dogRepository.findById(id).orElseThrow(() ->
+			new IllegalArgumentException("Dog not found"));
+
+		log.info("Update dog status ACTIVE: {}", dto);
+
+		MultipartFile renderedImage = dto.getRenderedImage();
+		String renderedImageUrl = s3Uploader.upload(renderedImage, "dog-rendered-images");
+
+		dog.setRenderedUrl(renderedImageUrl);
+		dog.setStatus(Status.ACTIVE);
+		dog.setUpdatedAt(LocalDateTime.now());
+
+		Dog updatedDog = dogRepository.save(dog);
+
+		return new UpdateDogStatusActiveResponseDto(
+			updatedDog.getId(),
+			updatedDog.getStatus(),
+			updatedDog.getUpdatedAt()
+		);
+	}
 
 	/**
 	 * 📍 강아지 단일 조회
@@ -271,7 +341,7 @@ public class DogService {
 	}
 
 	/**
-	 * 📍 강아지 성격 수정
+	 * 📍 강아지 성격 수정 (X)
 	 * @param id 강아지 id
 	 * @param dto 강아지 id, 바꿀 성격 id 1, 바꿀 성격 id 2
 	 * @return 수정된 강아지 성격 정보 (id, 성격 조합 id, 바뀐 성격 이름, 수정 일자)
@@ -331,32 +401,6 @@ public class DogService {
 			combination.getId(),
 			personalityNames,
 			updatedDog.getUpdatedAt()
-		);
-	}
-
-	/**
-	 * 📍 강아지 삭제
-	 * @param id 강아지 id
-	 * @param dto 강아지 id
-	 * @return 삭제된 강아지 정보 (id, 이름, 상태(INACTIVE), 삭제일자)
-	 */
-	@Transactional
-	public DeleteDogResponseDto deleteDog(Long id, DeleteDogRequestDto dto) {
-		Dog dog = dogRepository.findById(id).orElseThrow(() ->
-			new IllegalArgumentException("Dog not found"));
-
-		log.info("Delete dog: {}", dto.getDogId());
-
-		dog.setStatus(Status.INACTIVE);
-		dog.setDeletedAt(LocalDateTime.now());
-
-		Dog updatedDog = dogRepository.save(dog);
-
-		return new DeleteDogResponseDto(
-			updatedDog.getId(),
-			updatedDog.getName(),
-			updatedDog.getStatus(),
-			updatedDog.getDeletedAt()
 		);
 	}
 }

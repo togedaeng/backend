@@ -29,4 +29,21 @@ public class DogResponseDto {
 
 	public DogResponseDto() {
 	}
+
+	@Override
+	public String toString() {
+		return "DogResponseDto{" +
+			"id=" + id +
+			", userId=" + userId +
+			", personalityCombinationId=" + personalityCombinationId +
+			", name='" + name + '\'' +
+			", gender=" + gender +
+			", birth=" + birth +
+			", callName='" + callName + '\'' +
+			", status=" + status +
+			", createdAt=" + createdAt +
+			", updatedAt=" + updatedAt +
+			", deletedAt=" + deletedAt +
+			'}';
+	}
 }

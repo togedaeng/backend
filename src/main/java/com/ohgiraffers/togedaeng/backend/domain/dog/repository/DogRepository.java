@@ -11,4 +11,6 @@ public interface DogRepository extends JpaRepository<Dog, Long> {
 	boolean existsByUserIdAndDeletedAtIsNull(Long userId);
 
 	List<Dog> findByStatus(Status status);
+
+	List<Dog> findAllByUserId(Long userId);
 }

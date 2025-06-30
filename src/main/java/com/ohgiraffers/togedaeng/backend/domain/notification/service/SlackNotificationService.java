@@ -49,7 +49,7 @@ public class SlackNotificationService {
 		int waitingCount = 0;
 		List<DogResponseDto> checkStatus = dogService.getAllDogs();
 		for (DogResponseDto dogResponseDto : checkStatus) {
-			if (dogResponseDto.getStatus() == Status.WAITING) {
+			if (dogResponseDto.getStatus() == Status.REQUESTED) {
 				waitingCount++;
 			}
 		}

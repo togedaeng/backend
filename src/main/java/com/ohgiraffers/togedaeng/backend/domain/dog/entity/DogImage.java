@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -29,14 +31,27 @@ public class DogImage {
 	@Column(name = "image_url", nullable = false)
 	private String imageUrl;
 
-	@Column(name = "uploaded_at")
-	private LocalDateTime uploadedAt = LocalDateTime.now();
+	@Column(name = "model_url")
+	private String modelUrl;
 
-	public DogImage(Long id, Long dogId, String imageUrl, LocalDateTime uploadedAt) {
+	@Enumerated(EnumType.STRING)
+	private Type type;
+
+	@Column(name = "created_at")
+	private LocalDateTime createdAt = LocalDateTime.now();
+
+	@Column(name = "updated_at")
+	private LocalDateTime updatedAt;
+
+	public DogImage(Long id, Long dogId, String imageUrl, String modelUrl, Type type, LocalDateTime createdAt,
+		LocalDateTime updatedAt) {
 		this.id = id;
 		this.dogId = dogId;
 		this.imageUrl = imageUrl;
-		this.uploadedAt = uploadedAt;
+		this.modelUrl = modelUrl;
+		this.type = type;
+		this.createdAt = createdAt;
+		this.updatedAt = updatedAt;
 	}
 }
 

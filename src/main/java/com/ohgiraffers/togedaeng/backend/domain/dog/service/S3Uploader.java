@@ -1,6 +1,8 @@
 package com.ohgiraffers.togedaeng.backend.domain.dog.service;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -30,5 +32,21 @@ public class S3Uploader {
 		amazonS3.putObject(bucket, fileName, file.getInputStream(), metadata);
 		return amazonS3.getUrl(bucket, fileName).toString();
 	}
+
+	public String uploadFromUrl(String imageUrl, String folderName) {
+		try (InputStream in = new URL(imageUrl).openStream()) {
+			String fileName = UUID.randomUUID() + ".png";
+			String filePath = folderName + "/" + fileName;
+
+			ObjectMetadata metadata = new ObjectMetadata();
+			metadata.setContentType("image/png");
+			amazonS3.putObject(bucket, filePath, in, metadata);
+
+			return amazonS3.getUrl(bucket, filePath).toString();
+		} catch (IOException e) {
+			throw new RuntimeException("S3 업로드 실패", e);
+		}
+	}
+
 }
 
