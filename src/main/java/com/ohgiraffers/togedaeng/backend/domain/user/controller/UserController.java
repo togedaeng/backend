@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,17 +17,77 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.DeleteUserResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserNicknameUpdateDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.User;
+import com.ohgiraffers.togedaeng.backend.domain.user.repository.UserRepository;
 import com.ohgiraffers.togedaeng.backend.domain.user.service.UserService;
+import com.ohgiraffers.togedaeng.backend.global.auth.service.JwtProvider;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/user")
 public class UserController {
 	Logger log = LoggerFactory.getLogger(UserController.class);
 
 	private final UserService userService;
+	private final JwtProvider jwtProvider;
+	private final UserRepository userRepository;
 
-	public UserController(UserService userService) {
+	@Autowired
+	public UserController(UserService userService, JwtProvider jwtProvider, UserRepository userRepository) {
 		this.userService = userService;
+		this.jwtProvider = jwtProvider;
+		this.userRepository = userRepository;
+	}
+
+	/**
+	 * 📍 현재 로그인한 사용자 정보 조회
+	 * @param request HTTP 요청 (JWT 토큰 추출용)
+	 * @return 현재 로그인한 사용자 정보
+	 */
+	@GetMapping("/me")
+	public ResponseEntity<UserResponseDto> getCurrentUser(HttpServletRequest request) {
+		log.info("GET /user/me request received");
+		
+		try {
+			// Authorization 헤더에서 Bearer 토큰 추출
+			String authHeader = request.getHeader("Authorization");
+			log.info("Authorization header: {}", authHeader);
+			
+			if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+				log.warn("Invalid or missing Authorization header");
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+			}
+			
+			String token = authHeader.substring(7); // "Bearer " 제거
+			log.info("Extracted token: {}", token.substring(0, Math.min(token.length(), 20)) + "...");
+			
+			// JWT 토큰에서 사용자 ID 추출
+			Long userId = jwtProvider.getUserId(token);
+			log.info("Extracted userId: {}", userId);
+			
+			// 사용자 정보 조회
+			User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+			
+			UserResponseDto userResponse = new UserResponseDto(
+				user.getId(),
+				user.getNickname(),
+				user.getGender(),
+				user.getBirth(),
+				user.getEmail(),
+				user.getProvider(),
+				user.getStatus(),
+				user.getCreatedAt()
+			);
+			
+			log.info("Current user info retrieved - userId: {}", userId);
+			return ResponseEntity.ok(userResponse);
+			
+		} catch (Exception e) {
+			log.error("Error getting current user", e);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		}
 	}
 
 	/**

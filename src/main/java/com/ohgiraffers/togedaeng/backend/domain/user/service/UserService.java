@@ -10,11 +10,11 @@ import org.springframework.stereotype.Service;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.DeleteUserResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserInfoRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserNicknameUpdateDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.User;
 import com.ohgiraffers.togedaeng.backend.domain.user.repository.UserRepository;
-import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserInfoRequestDto;
 
 import jakarta.transaction.Transactional;
 
@@ -61,6 +61,7 @@ public class UserService {
 				savedUser.getGender(),
 				savedUser.getBirth(),
 				savedUser.getEmail(),
+				savedUser.getProvider(),
 				savedUser.getStatus(),
 				savedUser.getCreatedAt()
 			);
@@ -85,6 +86,7 @@ public class UserService {
 				user.getGender(),
 				user.getBirth(),
 				user.getEmail(),
+				user.getProvider(),
 				user.getStatus(),
 				user.getCreatedAt()
 			));
@@ -114,6 +116,7 @@ public class UserService {
 			user.getGender(),
 			user.getBirth(),
 			user.getEmail(),
+			user.getProvider(),
 			user.getStatus(),
 			user.getCreatedAt()
 		);
@@ -143,6 +146,7 @@ public class UserService {
 			updatedUser.getGender(),
 			updatedUser.getBirth(),
 			updatedUser.getEmail(),
+			updatedUser.getProvider(),
 			updatedUser.getStatus(),
 			updatedUser.getCreatedAt()
 		);

@@ -23,6 +23,7 @@ public class UserResponseDto {
 	private Gender gender;
 	private LocalDate birth;
 	private String email;
+	private String provider;
 	private Status status;
 	private LocalDateTime createdAt;
 }

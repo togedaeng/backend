@@ -23,10 +23,13 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
 		http
 			.csrf(csrf -> csrf.disable())
-			.cors(cors -> {})
+			.cors(cors -> {
+			})
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers("/auth/**").permitAll()
+				.requestMatchers("/oauth/callback/**").permitAll()
+				.requestMatchers("/signup").permitAll()
 				.anyRequest().authenticated()
 			)
 			.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
