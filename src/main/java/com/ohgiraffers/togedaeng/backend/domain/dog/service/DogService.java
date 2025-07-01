@@ -5,9 +5,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -155,12 +158,9 @@ public class DogService {
 	 * @return 모든 강아지 리스트
 	 */
 	@Transactional
-	public List<DogResponseDto> getAllDogs() {
-		List<Dog> dogs = dogRepository.findAll();
-		List<DogResponseDto> dogResponseDtos = new ArrayList<>();
-
-		for (Dog dog : dogs) {
-			dogResponseDtos.add(new DogResponseDto(
+	public Page<DogResponseDto> getAllDogs(Pageable pageable) {
+		return dogRepository.findAll(pageable)
+			.map(dog -> new DogResponseDto(
 				dog.getId(),
 				dog.getUserId(),
 				dog.getPersonalityCombinationId(),
@@ -173,12 +173,28 @@ public class DogService {
 				dog.getUpdatedAt(),
 				dog.getDeletedAt()
 			));
-		}
-
-		log.info("Get all dogs: {}", dogResponseDtos);
-
-		return dogResponseDtos;
 	}
+
+	public List<DogResponseDto> getAllDogsWithoutPaging() {
+		List<Dog> dogs = dogRepository.findAll();
+		return dogs.stream()
+			.map(dog -> new DogResponseDto(
+				dog.getId(),
+				dog.getUserId(),
+				dog.getPersonalityCombinationId(),
+				dog.getName(),
+				dog.getGender(),
+				dog.getBirth(),
+				dog.getCallName(),
+				dog.getStatus(),
+				dog.getCreatedAt(),
+				dog.getUpdatedAt(),
+				dog.getDeletedAt()
+			))
+			.collect(Collectors.toList());
+	}
+
+
 
 	/**
 	 * 📍 요청 뱓은 강아지 전체 조회

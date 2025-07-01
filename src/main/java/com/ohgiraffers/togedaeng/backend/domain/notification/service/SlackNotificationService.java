@@ -47,7 +47,7 @@ public class SlackNotificationService {
 			throw new IllegalStateException("사용자 ID " + userId + "의 닉네임이 설정되지 않았습니다");
 		}
 		int waitingCount = 0;
-		List<DogResponseDto> checkStatus = dogService.getAllDogs();
+		List<DogResponseDto> checkStatus = dogService.getAllDogsWithoutPaging();
 		for (DogResponseDto dogResponseDto : checkStatus) {
 			if (dogResponseDto.getStatus() == Status.REQUESTED) {
 				waitingCount++;

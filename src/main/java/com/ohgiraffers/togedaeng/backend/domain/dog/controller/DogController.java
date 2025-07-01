@@ -5,6 +5,9 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -79,11 +82,12 @@ public class DogController {
 	 * @return 모든 강아지 리스트
 	 */
 	@GetMapping
-	public ResponseEntity<List<DogResponseDto>> getAllDogs() {
-		log.info("Get all dogs");
-		List<DogResponseDto> dogs = dogService.getAllDogs();
-		return new ResponseEntity<>(dogs, HttpStatus.OK);
+	public ResponseEntity<Page<DogResponseDto>> getAllDogs(@PageableDefault(size = 7) Pageable pageable) {
+		log.info("Get all dogs with paging: {}", pageable);
+		Page<DogResponseDto> dogs = dogService.getAllDogs(pageable);
+		return ResponseEntity.ok(dogs);
 	}
+
 
 	/**
 	 * 📍 요청 뱓은 강아지 전체 조회
