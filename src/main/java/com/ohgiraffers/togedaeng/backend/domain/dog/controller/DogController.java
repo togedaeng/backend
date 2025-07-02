@@ -42,7 +42,6 @@ import com.ohgiraffers.togedaeng.backend.global.auth.service.JwtExtractor;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/api/dog")
 public class DogController {
 	Logger log = LoggerFactory.getLogger(DogController.class);
 
