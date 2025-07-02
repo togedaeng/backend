@@ -33,7 +33,7 @@ public class Custom {
 	private Long dogId;
 
 	// 담당자 ID (관리자)
-	@Column(name = "admin_id", nullable = false)
+	@Column(name = "admin_id")
 	private Long adminId;
 
 	@Enumerated(EnumType.STRING)
