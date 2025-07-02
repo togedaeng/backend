@@ -39,6 +39,10 @@ public class Custom {
 	@Enumerated(EnumType.STRING)
 	private Status status;
 
+	// 이전 커스텀 요청 ID (보류 상태 관리를 위해 추가)
+	@Column(name = "previous_custom_id")
+	private Long previousCustomId;
+
 	// 커스텀 등록일
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
