@@ -8,15 +8,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.ohgiraffers.togedaeng.backend.domain.Ndog.dto.request.CreateDogRequestDto;
-import com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Dog;
-import com.ohgiraffers.togedaeng.backend.domain.Ndog.exception.ImageUploadException;
-import com.ohgiraffers.togedaeng.backend.domain.Ndog.repository.DogRepository;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
+import com.ohgiraffers.togedaeng.backend.domain.dog.exception.ImageUploadException;
+import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCanceledRequestDto;
-import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCompletedRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusInProgressRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusCanceledResponseDto;
-import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusCompletedResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusInProgressResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Custom;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.DogImage;
@@ -121,7 +119,7 @@ public class CustomService {
 		// 강아지 엔티티 조회 및 상태 변경
 		Dog dog = dogRepository.findById(custom.getDogId())
 			.orElseThrow(() -> new IllegalArgumentException("해당 강아지가 존재하지 않습니다."));
-		dog.setStatus(com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Status.APPROVED);
+		dog.setStatus(com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status.APPROVED);
 		dogRepository.save(dog);
 
 		// 응답 DTO 생성 및 반환
@@ -166,7 +164,7 @@ public class CustomService {
 		// 강아지 엔티티 조회 및 상태 변경
 		Dog dog = dogRepository.findById(custom.getDogId())
 			.orElseThrow(() -> new IllegalArgumentException("해당 강아지가 존재하지 않습니다."));
-		dog.setStatus(com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Status.SUSPENDED);
+		dog.setStatus(com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status.SUSPENDED);
 		dogRepository.save(dog);
 
 		// 응답 DTO 생성 및 반환

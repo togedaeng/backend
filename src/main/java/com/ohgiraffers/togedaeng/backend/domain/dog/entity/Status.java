@@ -1,4 +1,4 @@
-package com.ohgiraffers.togedaeng.backend.domain.Ndog.entity;
+package com.ohgiraffers.togedaeng.backend.domain.dog.entity;
 
 public enum Status {
 	REGISTERED, // 등록

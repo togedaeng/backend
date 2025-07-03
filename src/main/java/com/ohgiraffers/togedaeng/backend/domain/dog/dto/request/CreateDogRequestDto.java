@@ -1,11 +1,11 @@
-package com.ohgiraffers.togedaeng.backend.domain.Ndog.dto.request;
+package com.ohgiraffers.togedaeng.backend.domain.dog.dto.request;
 
 import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Gender;
+import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

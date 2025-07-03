@@ -1,9 +1,9 @@
-package com.ohgiraffers.togedaeng.backend.domain.Ndog.dto.response;
+package com.ohgiraffers.togedaeng.backend.domain.dog.dto.response;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Gender;
+import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
