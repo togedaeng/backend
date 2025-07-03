@@ -28,7 +28,7 @@ public class SecurityConfig {
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers("/auth/**").permitAll()
-				.requestMatchers("/oauth/callback/**", "/api/dog/**").permitAll()
+				.requestMatchers("/oauth/callback/**", "/api/custom/**").permitAll()
 				.requestMatchers("/signup").permitAll()
 				.anyRequest().authenticated()
 			)

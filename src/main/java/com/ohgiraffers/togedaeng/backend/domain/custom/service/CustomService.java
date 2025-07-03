@@ -9,7 +9,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.dto.request.CreateDogRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.exception.ImageUploadException;
+import com.ohgiraffers.togedaeng.backend.domain.Ndog.repository.DogRepository;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusInProgressRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusInProgressResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Custom;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.DogImage;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Status;
@@ -29,7 +33,19 @@ public class CustomService {
 	private final CustomRepository customRepository;
 	private final S3Uploader s3Uploader;
 	private final DogImageRepository dogImageRepository;
+	private final DogRepository dogRepository;
 
+	/**
+	 * 📍 강아지 등록 시 함께 커스텀 요청을 생성하는 메서드
+	 * - 상태는 기본적으로 PENDING으로 저장됨
+	 * - 메인 이미지는 필수이며, 서브 이미지는 최대 3장까지 허용
+	 * - 업로드된 이미지는 S3에 저장되고, 각각 DogImage 엔티티로 저장됨
+	 *
+	 * @param dogId 등록된 강아지의 ID
+	 * @param dto 강아지 등록 요청 DTO (이미지 포함)
+	 * @throws IllegalArgumentException 메인 이미지가 없거나 서브 이미지가 3장을 초과할 경우
+	 * @throws ImageUploadException S3 업로드에 실패한 경우
+	 */
 	@Transactional
 	public void createCustomRequest(Long dogId, CreateDogRequestDto dto) {
 		log.info("📦 [커스텀 요청 생성] 시작 - dogId: {}", dogId);
@@ -70,5 +86,49 @@ public class CustomService {
 		}
 
 		log.info("✅ [커스텀 요청 생성] 완료 - customId: {}", custom.getId());
+	}
+
+	/**
+	 * 📍 커스텀 요청 상태를 '진행중(IN_PROGRESS)'으로 변경하는 메서드
+	 * - 커스텀 요청 ID로 해당 요청을 조회하고 존재하지 않으면 예외 발생
+	 * - 상태를 IN_PROGRESS로 변경하고, 관리자 ID와 시작 일자를 설정
+	 * - 해당 커스텀 요청에 연결된 강아지의 상태를 APPROVED로 변경
+	 * - 변경된 커스텀 요청 정보를 담은 응답 DTO를 반환
+	 *
+	 * @param customId 변경할 커스텀 요청의 ID
+	 * @param dto     관리자 ID를 포함한 상태 변경 요청 DTO
+	 * @return 상태 변경 결과를 담은 UpdateCustomStatusInProgressResponseDto
+	 * @throws IllegalArgumentException 존재하지 않는 커스텀 요청 또는 강아지일 경우
+	 */
+	@Transactional
+	public UpdateCustomStatusInProgressResponseDto updateCustomStatusInProgress(Long customId, UpdateCustomStatusInProgressRequestDto dto) {
+		Long adminId = dto.getAdminId();
+
+		// 커스텀 요청 조회
+		Custom custom = customRepository.findById(customId)
+			.orElseThrow(() -> new IllegalArgumentException("해당 커스텀 요청이 존재하지 않습니다."));
+
+		// 상태 변경 및 관리자 아이디, 시작일자 설정
+		custom.setStatus(Status.IN_PROGRESS);
+		custom.setAdminId(adminId);
+		custom.setStartedAt(LocalDateTime.now());
+		customRepository.save(custom);
+
+		// 강아지 엔티티 조회 및 상태 변경
+		Dog dog = dogRepository.findById(custom.getDogId())
+			.orElseThrow(() -> new IllegalArgumentException("해당 강아지가 존재하지 않습니다."));
+		dog.setStatus(com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Status.APPROVED);
+		dogRepository.save(dog);
+
+		// 응답 DTO 생성 및 반환
+		UpdateCustomStatusInProgressResponseDto responseDto = new UpdateCustomStatusInProgressResponseDto(
+			custom.getId(),
+			custom.getDogId(),
+			custom.getAdminId(),
+			custom.getStatus(),
+			custom.getStartedAt()
+		);
+
+		return responseDto;
 	}
 }
