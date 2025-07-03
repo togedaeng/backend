@@ -4,14 +4,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.controller.DogController;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCanceledRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCompletedRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusInProgressRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusCompletedResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusInProgressResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.service.CustomService;
 
@@ -55,10 +60,10 @@ public class CustomController {
 			log.info("✅ 커스텀 요청 진행중 상태 변경 성공 - customId: {}", customId);
 			return ResponseEntity.ok().build();
 		} catch (IllegalArgumentException e) {
-			log.warn("⚠️ 상태 변경 실패 - {}", e.getMessage());
+			log.warn("⚠️ 커스텀 진행 상태 변경 실패 - {}", e.getMessage());
 			return ResponseEntity.badRequest().build();
 		} catch (Exception e) {
-			log.error("❌ 상태 변경 중 예외 발생", e);
+			log.error("❌ 커스텀 진행 상태 변경 중 예외 발생", e);
 			return ResponseEntity.status(500).build();
 		}
 	}
@@ -66,9 +71,21 @@ public class CustomController {
 
 	// 커스텀 상태 변경 - 보류로 변경 -> 보류 사유를 선택 후 변경. 관리자 아이디(조인해서 페이지에 보여줄 때는 닉네임으로 가져오면 좋을듯) 등록. 강아지 상태 SUSPENDED로 변경
 
-	// 커스텀 상태 변경 - 완료로 변경 -> 렌더링 이미지 파일을 받아야 수정 가능. 렌더링 이미지 파일은 S3에 업로드. 관리자 아이디(조인해서 페이지에 보여줄 때는 닉네임으로 가져오면 좋을듯) 등록. 강아지 상태 APPROVED로 변경
+	// 커스텀 상태 변경 - 완료 -> 렌더링 이미지 dog에 저장 후 상태 변경, 강아지 상태는 APPROVED
 
-	// 커스텀 상태 변경 - 취소 -> 그냥 상태변경 로직 적용하면 될듯. 수정쿼리. 관리자 아이디(조인해서 페이지에 보여줄 때는 닉네임으로 가져오면 좋을듯) 등록
+	/**
+	 * 📍 커스텀 요청 상태를 '취소(CANCELLED)'로 변경하는 API
+	 * - 요청 경로에서 커스텀 요청 ID를 받고, 요청 바디에서 관리자 ID를 전달받음
+	 * - 해당 커스텀 요청의 상태를 취소로 변경하고, 관리자 ID를 등록함
+	 * - 변경 성공 시 200 OK 반환, 상태 변경 실패 시 400 Bad Request, 서버 에러 시 500 반환
+	 *
+	 * 요청 방식: PUT
+	 * 요청 경로: /api/custom/{id}/canceled
+	 *
+	 * @param customId  경로 변수로 전달받는 커스텀 요청 ID
+	 * @param dto       요청 바디로 전달받는 관리자 ID 포함 DTO
+	 * @return 상태 변경 결과에 따른 ResponseEntity 반환
+	 */
 	@PutMapping("/{id}/canceled")
 	public ResponseEntity<UpdateCustomStatusInProgressResponseDto> updateCustomStatusCanceled(
 		@PathVariable("id") Long customId,
@@ -81,10 +98,10 @@ public class CustomController {
 			log.info("✅ 커스텀 요청 취소 상태 변경 성공 - customId: {}", customId);
 			return ResponseEntity.ok().build();
 		} catch (IllegalArgumentException e) {
-			log.warn("⚠️ 상태 변경 실패 - {}", e.getMessage());
+			log.warn("⚠️ 커스텀 취소 상태 변경 실패 - {}", e.getMessage());
 			return ResponseEntity.badRequest().build();
 		} catch (Exception e) {
-			log.error("❌ 상태 변경 중 예외 발생", e);
+			log.error("❌ 커스텀 취소 상태 변경 중 예외 발생", e);
 			return ResponseEntity.status(500).build();
 		}
 	}
