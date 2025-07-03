@@ -54,4 +54,10 @@ public class Custom {
 	// 커스텀 취소일
 	@Column(name = "canceled_at")
 	private LocalDateTime canceledAt;
+
+	public Custom(Long dogId, Status status, LocalDateTime createdAt) {
+		this.dogId = dogId;
+		this.status = status;
+		this.createdAt = createdAt;
+	}
 }

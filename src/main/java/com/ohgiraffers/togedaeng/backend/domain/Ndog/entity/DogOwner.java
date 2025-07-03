@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -40,4 +41,11 @@ public class DogOwner {
 
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
+
+	public DogOwner(Long userId, Long dogId, @NotBlank(message = "애칭은 필수입니다.") String callName, LocalDateTime createdAt) {
+		this.userId = userId;
+		this.dogId = dogId;
+		this.name = callName;
+		this.createdAt = createdAt;
+	}
 }
