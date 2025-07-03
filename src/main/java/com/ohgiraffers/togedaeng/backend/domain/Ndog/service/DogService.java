@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.dto.request.CreateDogRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.Ndog.dto.response.CreateDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.DogOwner;
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Status;
@@ -29,7 +30,7 @@ public class DogService {
 	private final DogOwnerRepository dogOwnerRepository;
 
 	@Transactional
-	public Long createDogInfo(CreateDogRequestDto dto, Long userId) {
+	public CreateDogResponseDto createDogInfo(CreateDogRequestDto dto, Long userId) {
 
 		log.info("🐶 [강아지 등록] 시작 - userId: {}", userId);
 
@@ -82,6 +83,18 @@ public class DogService {
 
 		log.info("✅ [강아지 등록] 완료 - dogId: {}", dog.getId());
 
-		return dog.getId();
+		// 4. ResponseDto 생성
+		CreateDogResponseDto responseDto = new CreateDogResponseDto(
+			dog.getId(),
+			userId,
+			combination.getId(),
+			dog.getName(),
+			dog.getGender(),
+			dog.getBirth(),
+			dto.getCallName(),
+			dog.getCreatedAt()
+		);
+
+		return responseDto;
 	}
 }

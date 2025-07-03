@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.dto.request.CreateDogRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.Ndog.dto.response.CreateDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.service.DogService;
 import com.ohgiraffers.togedaeng.backend.domain.custom.service.CustomService;
 import com.ohgiraffers.togedaeng.backend.global.auth.service.JwtExtractor;
@@ -31,7 +32,7 @@ public class DogController {
 
 	// 강아지 등록
 	@PostMapping("/create")
-	public ResponseEntity<CreateDogRequestDto> createDog(
+	public ResponseEntity<CreateDogResponseDto> createDog(
 		@ModelAttribute @Valid CreateDogRequestDto createDogRequestDto,
 		HttpServletRequest request) {
 		log.info("🐶 [강아지 등록] POST /api/dogs/register 요청 수신");
@@ -40,11 +41,11 @@ public class DogController {
 			Long userId = jwtExtractor.extractUserId(request);
 			log.debug("➡️  userId 추출 완료: {}", userId);
 
-			Long dogId = dogService.createDogInfo(createDogRequestDto, userId);
-			log.debug("✅ 강아지 저장 완료 - dogId: {}", dogId);
+			CreateDogResponseDto responseDto = dogService.createDogInfo(createDogRequestDto, userId);
+			log.debug("✅ 강아지 저장 완료 - dogId: {}", responseDto);
 
-			customService.createCustomRequest(dogId, createDogRequestDto);
-			log.info("📦 커스텀 요청 생성 완료 - dogId: {}", dogId);
+			customService.createCustomRequest(responseDto.getId(), createDogRequestDto);
+			log.info("📦 커스텀 요청 생성 완료 - dogId: {}", responseDto.getId());
 
 			return ResponseEntity.ok().build();
 
