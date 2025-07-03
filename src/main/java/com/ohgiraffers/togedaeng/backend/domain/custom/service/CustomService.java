@@ -13,8 +13,10 @@ import com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.exception.ImageUploadException;
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.repository.DogRepository;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCanceledRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCompletedRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusInProgressRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusCanceledResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusCompletedResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusInProgressResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Custom;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.DogImage;
@@ -134,7 +136,19 @@ public class CustomService {
 		return responseDto;
 	}
 
-	// 커스텀 상태 변경 - 취소
+
+	/**
+	 * 📍 커스텀 요청 상태를 '취소(CANCELLED)'로 변경하는 메서드
+	 * - 커스텀 요청 ID로 해당 요청을 조회하고 존재하지 않으면 예외 발생
+	 * - 상태를 CANCELLED로 변경하고, 관리자 ID와 취소 일자를 설정
+	 * - 해당 커스텀 요청에 연결된 강아지의 상태를 SUSPENDED로 변경
+	 * - 변경된 커스텀 요청 정보를 담은 응답 DTO를 반환
+	 *
+	 * @param customId 변경할 커스텀 요청의 ID
+	 * @param dto     관리자 ID를 포함한 상태 변경 요청 DTO
+	 * @return 상태 변경 결과를 담은 UpdateCustomStatusCanceledResponseDto
+	 * @throws IllegalArgumentException 존재하지 않는 커스텀 요청 또는 강아지일 경우
+	 */
 	@Transactional
 	public UpdateCustomStatusCanceledResponseDto updateCustomStatusCanceled(Long customId, UpdateCustomStatusCanceledRequestDto dto) {
 		Long adminId = dto.getAdminId();

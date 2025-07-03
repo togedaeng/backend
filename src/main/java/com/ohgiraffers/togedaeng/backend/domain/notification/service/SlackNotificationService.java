@@ -11,7 +11,7 @@
 // import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.CreateDogResponseDto;
 // import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogResponseDto;
 // import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
-// import com.ohgiraffers.togedaeng.backend.domain.Ndog.service.DogService;
+// import com.ohgiraffers.togedaeng.backend.domain.dog.service.DogService;
 // import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.User;
 // import com.ohgiraffers.togedaeng.backend.domain.user.repository.UserRepository;
 // import com.slack.api.Slack;

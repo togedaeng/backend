@@ -2,7 +2,7 @@ package com.ohgiraffers.togedaeng.backend.domain.user.model.dto;
 
 import java.time.LocalDate;
 
-import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
+import com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Gender;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
