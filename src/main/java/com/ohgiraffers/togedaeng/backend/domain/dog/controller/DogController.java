@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.CreateDogResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.service.DogService;
 import com.ohgiraffers.togedaeng.backend.domain.custom.service.CustomService;
@@ -118,7 +120,44 @@ public class DogController {
 		}
 	}
 
-	// 강아지 애칭 수정
+	/**
+	 * 📍 강아지 애칭 수정 API
+	 * - 강아지 ID와 요청 사용자 ID로 소유자 검증
+	 * - 애칭 수정 성공 시 200 OK 반환
+	 * - 요청 사용자 권한 없음 시 403 Forbidden, 실패 시 400 Bad Request 또는 500
+	 *
+	 * 요청 방식: PATCH
+	 * 요청 경로: /api/dogs/{id}/call-name
+	 *
+	 * @param id        경로 변수로 전달받는 강아지 ID
+	 * @param requestDto 애칭 수정 요청 DTO
+	 * @param request   HttpServletRequest (JWT 토큰에서 userId 추출)
+	 * @return 수정 결과 ResponseEntity
+	 */
+	@PatchMapping("/{id}/call-name")
+	public ResponseEntity<UpdateDogCallNameResponseDto> updateDogCallName(
+		@PathVariable("id") Long id,
+		@RequestBody UpdateDogCallNameRequestDto requestDto,
+		HttpServletRequest request
+	) {
+		log.info("🐶 [강아지 애칭 수정] PATCH /api/dogs/{}/call-name 요청 수신", id);
 
+		try {
+			Long userId = jwtExtractor.extractUserId(request);
+			UpdateDogCallNameResponseDto responseDto = dogService.updateDogCallName(id, requestDto, userId);
 
+			log.info("✅ 강아지 애칭 수정 성공 - dogId: {}, updatedCallName: {}", id, responseDto.getUpdatedCallName());
+			return ResponseEntity.ok(responseDto);
+
+		} catch (IllegalArgumentException e) {
+			log.warn("⚠️ 강아지 애칭 수정 실패 - {}", e.getMessage());
+			return ResponseEntity.badRequest().build();
+		} catch (SecurityException e) {
+			log.warn("🚫 권한 없음 - {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		} catch (Exception e) {
+			log.error("❌ 강아지 애칭 수정 중 예외 발생", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 }

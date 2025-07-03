@@ -7,8 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.CreateDogResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.DogOwner;
@@ -163,4 +165,54 @@ public class DogService {
 		}
 	}
 
+	/**
+	 * 📍 강아지 애칭 수정 서비스 메서드
+	 * - 강아지 ID로 엔티티를 조회하고 존재 여부를 확인
+	 * - DogOwner 테이블에서 해당 강아지의 소유자가 현재 사용자(userId)인지 검증
+	 * - 소유자 검증 후 애칭과 수정일(updatedAt)을 갱신하고 저장
+	 * - 수정 완료 시 수정된 강아지 정보를 담은 Response DTO 반환
+	 *
+	 * @param dogId  수정할 강아지의 ID
+	 * @param dto    강아지 애칭 수정 요청 DTO (newCallName 포함)
+	 * @param userId 현재 로그인된 사용자 ID
+	 * @return 수정된 강아지 정보를 담은 UpdateDogNameResponseDto
+	 * @throws IllegalArgumentException 강아지가 존재하지 않거나 잘못된 ID인 경우
+	 * @throws SecurityException 요청 사용자가 강아지의 소유자가 아닌 경우
+	 * @throws RuntimeException 애칭 수정 처리 중 서버 오류 발생 시
+	 */
+	@Transactional
+	public UpdateDogCallNameResponseDto updateDogCallName(Long dogId, UpdateDogCallNameRequestDto dto, Long userId) {
+		log.info("🔄 강아지 애칭 수정 요청 - dogId: {}, userId: {}, newCallName: {}", dogId, userId, dto.getNewCallName());
+
+		try {
+			// DogOwner 엔티티 조회
+			DogOwner dogOwner = dogOwnerRepository.findByDogIdAndUserId(dogId, userId)
+				.orElseThrow(() -> {
+					log.warn("❌ DogOwner 조회 실패 - dogId: {}, userId: {}", dogId, userId);
+					return new IllegalArgumentException("해당 강아지의 소유자 정보가 존재하지 않습니다.");
+				});
+
+			// 소유자 권한 체크
+			boolean isOwner = dogOwnerRepository.existsByDogIdAndUserId(dogId, userId);
+			if (!isOwner) {
+				log.warn("🚫 권한 없음 - 요청 userId: {}, dogId: {}", userId, dogId);
+				throw new SecurityException("본인 소유의 강아지만 애칭을 수정할 수 있습니다.");
+			}
+
+			// 애칭 수정
+			dogOwner.setName(dto.getNewCallName());
+			dogOwner.setUpdatedAt(LocalDateTime.now());
+			dogOwnerRepository.save(dogOwner);
+
+			log.info("✅ 강아지 애칭 수정 성공 - dogId: {}, updatedCallName: {}", dogId, dogOwner.getName());
+			return new UpdateDogCallNameResponseDto(dogId, dogOwner.getName(), dogOwner.getUpdatedAt());
+
+		} catch (IllegalArgumentException e) {
+			log.error("⚠️ 강아지 애칭 수정 실패 - {}", e.getMessage());
+			throw e;
+		} catch (Exception e) {
+			log.error("❌ 강아지 애칭 수정 처리 중 예외 발생", e);
+			throw new RuntimeException("강아지 애칭 수정 중 서버 오류가 발생했습니다.", e);
+		}
+	}
 }
