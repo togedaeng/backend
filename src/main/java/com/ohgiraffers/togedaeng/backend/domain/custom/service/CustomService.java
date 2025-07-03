@@ -12,7 +12,9 @@ import com.ohgiraffers.togedaeng.backend.domain.Ndog.dto.request.CreateDogReques
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.exception.ImageUploadException;
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.repository.DogRepository;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCanceledRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusInProgressRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusCanceledResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusInProgressResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Custom;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.DogImage;
@@ -127,6 +129,39 @@ public class CustomService {
 			custom.getAdminId(),
 			custom.getStatus(),
 			custom.getStartedAt()
+		);
+
+		return responseDto;
+	}
+
+	// 커스텀 상태 변경 - 취소
+	@Transactional
+	public UpdateCustomStatusCanceledResponseDto updateCustomStatusCanceled(Long customId, UpdateCustomStatusCanceledRequestDto dto) {
+		Long adminId = dto.getAdminId();
+
+		// 커스텀 요청 조회
+		Custom custom = customRepository.findById(customId)
+			.orElseThrow(() -> new IllegalArgumentException("해당 커스텀 요청이 존재하지 않습니다."));
+
+		// 상태 변경 및 관리자 아이디, 취소일자 설정
+		custom.setStatus(Status.CANCELLED);
+		custom.setAdminId(adminId);
+		custom.setCanceledAt(LocalDateTime.now());
+		customRepository.save(custom);
+
+		// 강아지 엔티티 조회 및 상태 변경
+		Dog dog = dogRepository.findById(custom.getDogId())
+			.orElseThrow(() -> new IllegalArgumentException("해당 강아지가 존재하지 않습니다."));
+		dog.setStatus(com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Status.SUSPENDED);
+		dogRepository.save(dog);
+
+		// 응답 DTO 생성 및 반환
+		UpdateCustomStatusCanceledResponseDto responseDto = new UpdateCustomStatusCanceledResponseDto(
+			custom.getId(),
+			custom.getDogId(),
+			custom.getAdminId(),
+			custom.getStatus(),
+			custom.getCanceledAt()
 		);
 
 		return responseDto;

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ohgiraffers.togedaeng.backend.domain.Ndog.controller.DogController;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCanceledRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusInProgressRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusInProgressResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.service.CustomService;
@@ -68,6 +69,23 @@ public class CustomController {
 	// 커스텀 상태 변경 - 완료로 변경 -> 렌더링 이미지 파일을 받아야 수정 가능. 렌더링 이미지 파일은 S3에 업로드. 관리자 아이디(조인해서 페이지에 보여줄 때는 닉네임으로 가져오면 좋을듯) 등록. 강아지 상태 APPROVED로 변경
 
 	// 커스텀 상태 변경 - 취소 -> 그냥 상태변경 로직 적용하면 될듯. 수정쿼리. 관리자 아이디(조인해서 페이지에 보여줄 때는 닉네임으로 가져오면 좋을듯) 등록
+	@PutMapping("/{id}/canceled")
+	public ResponseEntity<UpdateCustomStatusInProgressResponseDto> updateCustomStatusCanceled(
+		@PathVariable("id") Long customId,
+		@RequestBody UpdateCustomStatusCanceledRequestDto dto
+	) {
+		log.info("🔄 커스텀 요청 취소 상태 변경 요청 - customId: {}, adminId: {}", customId, dto.getAdminId());
 
-
+		try {
+			customService.updateCustomStatusCanceled(customId, dto);
+			log.info("✅ 커스텀 요청 취소 상태 변경 성공 - customId: {}", customId);
+			return ResponseEntity.ok().build();
+		} catch (IllegalArgumentException e) {
+			log.warn("⚠️ 상태 변경 실패 - {}", e.getMessage());
+			return ResponseEntity.badRequest().build();
+		} catch (Exception e) {
+			log.error("❌ 상태 변경 중 예외 발생", e);
+			return ResponseEntity.status(500).build();
+		}
+	}
 }
