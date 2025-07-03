@@ -29,6 +29,18 @@ public class DogService {
 	private final PersonalityCombinationRepository personalityCombinationRepository;
 	private final DogOwnerRepository dogOwnerRepository;
 
+	/**
+	 * 📍 강아지 등록 및 관련 데이터 저장 서비스 메서드
+	 * - 강아지 기본 정보 저장
+	 * - 성격 조합 저장 (중복 성격 제거 및 조합 생성/조회)
+	 * - DogOwner 엔티티 저장 (사용자와 강아지 연결)
+	 * - 등록 완료 후 상세 정보를 담은 Response DTO 반환
+	 *
+	 * @param dto 강아지 등록 요청 DTO (이름, 성별, 생일, 성격 등)
+	 * @param userId 현재 로그인된 사용자 ID
+	 * @return 등록된 강아지 정보가 포함된 CreateDogResponseDto 객체
+	 * @throws IllegalArgumentException 성격 ID가 누락되었거나 잘못된 경우
+	 */
 	@Transactional
 	public CreateDogResponseDto createDogInfo(CreateDogRequestDto dto, Long userId) {
 
