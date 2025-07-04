@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
+import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.DeleteUserResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserInfoRequestDto;
@@ -183,14 +185,14 @@ public class UserService {
 
 		User updatedUser = userRepository.save(user);
 
-		// List<Dog> dogs = dogRepository.findAllByUserId(id); // 혹은 userRepository.getDogsByUserId(id)
-		// for (Dog dog : dogs) {
-		// 	if (dog.getStatus() != Status.INACTIVE) {
-		// 		dog.setStatus(Status.INACTIVE);
-		// 		dog.setDeletedAt(LocalDateTime.now());
-		// 	}
-		// }
-		// dogRepository.saveAll(dogs);
+		List<Dog> dogs = dogRepository.findAllByUserId(id);
+		for (Dog dog : dogs) {
+			if (dog.getStatus() != Status.REMOVED) {
+				dog.setStatus(Status.REMOVED);
+				dog.setDeletedAt(LocalDateTime.now());
+			}
+		}
+		dogRepository.saveAll(dogs);
 
 		return new DeleteUserResponseDto(
 			updatedUser.getId(),
