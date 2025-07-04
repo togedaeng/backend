@@ -118,6 +118,9 @@ public class DogService {
 		return responseDto;
 	}
 
+	// 강아지 전체 조회
+
+	// 강아지 상세 조회
 
 
 	/**
