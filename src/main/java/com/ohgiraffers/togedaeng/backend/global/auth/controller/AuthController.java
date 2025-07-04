@@ -1,15 +1,20 @@
 package com.ohgiraffers.togedaeng.backend.global.auth.controller;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserInfoRequestDto;
@@ -76,6 +81,28 @@ public class AuthController {
 			log.error("OAuth login error", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body("로그인 처리 중 오류가 발생했습니다.");
+		}
+	}
+
+	/**
+	 * 📍 회원 닉네임 중복 확인
+	 * @param nickname 확인할 닉네임
+	 * @return 중복 여부
+	 */
+	@GetMapping("/nickname/check")
+	public ResponseEntity<Map<String, Boolean>> checkNickname(@RequestParam String nickname) {
+		log.info("Check nickname availability: {}", nickname);
+		
+		try {
+			boolean isAvailable = !userRepository.existsByNickname(nickname);
+			Map<String, Boolean> response = new HashMap<>();
+			response.put("isAvailable", isAvailable); // true: 사용 가능, false: 사용 불가능
+			
+			log.info("Nickname '{}' availability: {}", nickname, isAvailable);
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			log.error("Error checking nickname availability", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
 	}
 
