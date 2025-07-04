@@ -73,7 +73,6 @@ public class DogController {
 		}
 	}
 
-	// 강아지 전체 조회
 
 	// 사용자별 강아지 조회
 

@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.ohgiraffers.togedaeng.backend.domain.custom.repository.DogImageRepository;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameRequestDto;
@@ -18,6 +19,7 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogOwnerRepository;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
 import com.ohgiraffers.togedaeng.backend.domain.personality.entity.PersonalityCombination;
+import com.ohgiraffers.togedaeng.backend.domain.personality.repository.DogPersonalityRepository;
 import com.ohgiraffers.togedaeng.backend.domain.personality.repository.PersonalityCombinationRepository;
 
 import jakarta.transaction.Transactional;
@@ -32,6 +34,8 @@ public class DogService {
 	private final DogRepository dogRepository;
 	private final PersonalityCombinationRepository personalityCombinationRepository;
 	private final DogOwnerRepository dogOwnerRepository;
+	private final DogPersonalityRepository dogPersonalityRepository;
+	private final DogImageRepository dogImageRepository;
 
 	/**
 	 * 📍 강아지 등록 및 관련 데이터 저장 서비스 메서드
@@ -113,6 +117,8 @@ public class DogService {
 
 		return responseDto;
 	}
+
+
 
 	/**
 	 * 📍 강아지 이름 수정 서비스 메서드
