@@ -1,362 +1,227 @@
 package com.ohgiraffers.togedaeng.backend.domain.dog.service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
+import com.ohgiraffers.togedaeng.backend.domain.custom.repository.DogImageRepository;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.DeleteDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameRequestDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogPersonalityRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.CreateDogResponseDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DeleteDogResponseDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogPersonalityResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
-import com.ohgiraffers.togedaeng.backend.domain.dog.entity.DogImage;
+import com.ohgiraffers.togedaeng.backend.domain.dog.entity.DogOwner;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
-import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogImageRepository;
+import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogOwnerRepository;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
 import com.ohgiraffers.togedaeng.backend.domain.personality.entity.PersonalityCombination;
 import com.ohgiraffers.togedaeng.backend.domain.personality.repository.DogPersonalityRepository;
 import com.ohgiraffers.togedaeng.backend.domain.personality.repository.PersonalityCombinationRepository;
 
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class DogService {
 
 	Logger log = LoggerFactory.getLogger(DogService.class);
 
 	private final DogRepository dogRepository;
 	private final PersonalityCombinationRepository personalityCombinationRepository;
+	private final DogOwnerRepository dogOwnerRepository;
 	private final DogPersonalityRepository dogPersonalityRepository;
 	private final DogImageRepository dogImageRepository;
-	private final S3Uploader s3Uploader;
-
-	public DogService(DogRepository dogRepository, PersonalityCombinationRepository personalityCombinationRepository,
-		DogPersonalityRepository dogPersonalityRepository, DogImageRepository dogImageRepository,
-		S3Uploader s3Uploader) {
-		this.dogRepository = dogRepository;
-		this.personalityCombinationRepository = personalityCombinationRepository;
-		this.dogPersonalityRepository = dogPersonalityRepository;
-		this.dogImageRepository = dogImageRepository;
-		this.s3Uploader = s3Uploader;
-	}
 
 	/**
-	 * 📍 기본 강아지 등록
-	 * @param dto 강아지 등록 DTO
-	 * @return 등록된 강아지 DTO 변환
+	 * 📍 강아지 등록 및 관련 데이터 저장 서비스 메서드
+	 * - 강아지 기본 정보 저장
+	 * - 성격 조합 저장 (중복 성격 제거 및 조합 생성/조회)
+	 * - DogOwner 엔티티 저장 (사용자와 강아지 연결)
+	 * - 등록 완료 후 상세 정보를 담은 Response DTO 반환
+	 *
+	 * @param dto 강아지 등록 요청 DTO (이름, 성별, 생일, 성격 등)
+	 * @param userId 현재 로그인된 사용자 ID
+	 * @return 등록된 강아지 정보가 포함된 CreateDogResponseDto 객체
+	 * @throws IllegalArgumentException 성격 ID가 누락되었거나 잘못된 경우
 	 */
 	@Transactional
-	public CreateDogResponseDto createDog(CreateDogRequestDto dto, List<MultipartFile> images) {
+	public CreateDogResponseDto createDogInfo(CreateDogRequestDto dto, Long userId) {
 
-		// 유저 아이디로 유저 정보 찾기
+		log.info("🐶 [강아지 등록] 시작 - userId: {}", userId);
 
-		Long personalityId1 = dto.getPersonalityId1();  // 필수
-		Long personalityId2 = dto.getPersonalityId2();  // null 가능
+		// 1. 강아지 엔티티 저장
+		Dog dog = dogRepository.save(
+			Dog.builder()
+				.name(dto.getName())
+				.gender(dto.getGender())
+				.birth(dto.getBirth())
+				.status(Status.REGISTERED)
+				.createdAt(LocalDateTime.now())
+				.build()
+		);
+		log.debug("📌 강아지 저장 완료 - dogId: {}", dog.getId());
 
-		if (personalityId1 == null) {
-			throw new IllegalArgumentException("성격 하나는 반드시 선택해야 함");
+		// 2. 성격 조합 처리
+		Long p1 = dto.getPersonalityId1();
+		Long p2 = dto.getPersonalityId2();
+
+		if (p1 == null) {
+			throw new IllegalArgumentException("성격 하나는 반드시 선택해야 합니다.");
 		}
 
-		// 같은 값 두 번 선택한 경우 -> 하나만 사용
-		if (personalityId2 != null && personalityId1.equals(personalityId2)) {
-			personalityId2 = null;
+		if (p2 != null && p1.equals(p2)) {
+			p2 = null; // 중복 제거
 		}
 
-		// 정렬 (순서에 상관없이 동일한 조합으로 판단)
-		Long first = (personalityId2 == null || personalityId1 < personalityId2) ? personalityId1 : personalityId2;
-		Long second = (personalityId2 == null || personalityId1 < personalityId2) ? personalityId2 : personalityId1;
+		Long first = (p2 == null || p1 < p2) ? p1 : p2;
+		Long second = (p2 == null || p1 < p2) ? p2 : p1;
 
-		// 조합 조회 or 생성
 		PersonalityCombination combination = personalityCombinationRepository
-			.findByPersonalityId1AndPersonalityId2(first, second)
+			.findByDogIdAndPersonalityId1AndPersonalityId2(dog.getId(), first, second)
 			.orElseGet(() -> {
 				PersonalityCombination newCombo = new PersonalityCombination();
+				newCombo.setDogId(dog.getId());
 				newCombo.setPersonalityId1(first);
-				newCombo.setPersonalityId2(second); // p2가 null이면 null 저장됨
+				newCombo.setPersonalityId2(second);
 				return personalityCombinationRepository.save(newCombo);
 			});
 
-		try {
-			Dog dog = Dog.builder()
-				.userId(dto.getUserId())
-				.personalityCombinationId(combination.getId())
-				.name(dto.getName())
-				.gender(dto.getGender())
-				.birth(LocalDate.now())
-				.callName(dto.getCallName())
-				.status(Status.WAITING)
-				.createdAt(LocalDateTime.now())
-				.build();
+		combination.setDogId(dog.getId());
+		personalityCombinationRepository.save(combination);
+		log.debug("🧠 성격 조합 저장 완료 - dogId: {}, p1: {}, p2: {}", dog.getId(), first, second);
 
-			Dog savedDog = dogRepository.save(dog);
-			log.info("Creating new dog: {}", dto.getName());
+		// 3. DogOwner 저장
+		DogOwner owner = new DogOwner(userId, dog.getId(), dto.getCallName(), LocalDateTime.now());
+		dogOwnerRepository.save(owner);
 
-			// 이미지 업로드 처리
-			for (MultipartFile file : images) {
-				String imageUrl = s3Uploader.upload(file, "dog-images");
+		log.debug("👤 DogOwner 저장 완료 - userId: {}, dogId: {}", userId, dog.getId());
 
-				DogImage dogImage = new DogImage();
-				dogImage.setDogId(savedDog.getId());
-				dogImage.setImageUrl(imageUrl);
-				dogImage.setUploadedAt(LocalDateTime.now());
+		log.info("✅ [강아지 등록] 완료 - dogId: {}", dog.getId());
 
-				dogImageRepository.save(dogImage);
-			}
-
-			return new CreateDogResponseDto(
-				savedDog.getId(),
-				savedDog.getUserId(),
-				savedDog.getPersonalityCombinationId(),
-				savedDog.getName(),
-				savedDog.getGender(),
-				savedDog.getBirth(),
-				savedDog.getCallName(),
-				savedDog.getCreatedAt(),
-				savedDog.getUpdatedAt(),
-				savedDog.getDeletedAt()
-			);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	/**
-	 * 📍 강아지 전체 조회
-	 * @return 모든 강아지 리스트
-	 */
-	@Transactional
-	public List<DogResponseDto> getAllDogs() {
-		List<Dog> dogs = dogRepository.findAll();
-		List<DogResponseDto> dogResponseDtos = new ArrayList<>();
-
-		for (Dog dog : dogs) {
-			dogResponseDtos.add(new DogResponseDto(
-				dog.getId(),
-				dog.getUserId(),
-				dog.getPersonalityCombinationId(),
-				dog.getName(),
-				dog.getGender(),
-				dog.getBirth(),
-				dog.getCallName(),
-				dog.getStatus(),
-				dog.getCreatedAt(),
-				dog.getUpdatedAt(),
-				dog.getDeletedAt()
-			));
-		}
-
-		log.info("Get all dogs: {}", dogResponseDtos);
-
-		return dogResponseDtos;
-	}
-
-	/**
-	 * 📍 웨이팅중인 강아지 전체 조회
-	 * @return 대기 상태의 강아지 리스트
-	 */
-	@Transactional
-	public List<DogResponseDto> getWaitingDogs() {
-		List<Dog> dogs = dogRepository.findByStatus(Status.WAITING);
-		List<DogResponseDto> dogResponseDtos = new ArrayList<>();
-
-		for (Dog dog : dogs) {
-			dogResponseDtos.add(new DogResponseDto(
-				dog.getId(),
-				dog.getUserId(),
-				dog.getPersonalityCombinationId(),
-				dog.getName(),
-				dog.getGender(),
-				dog.getBirth(),
-				dog.getCallName(),
-				dog.getStatus(),
-				dog.getCreatedAt(),
-				dog.getUpdatedAt(),
-				dog.getDeletedAt()
-			));
-		}
-
-		return dogResponseDtos;
-	}
-
-	// 강아지 렌더링 완료 및 상태 변경
-
-	/**
-	 * 📍 강아지 단일 조회
-	 * @param id 강아지 id
-	 * @return 강아지 정보 DTO 변환
-	 */
-	@Transactional
-	public DogResponseDto getDogById(Long id) {
-		Dog dog = dogRepository.findById(id).orElse(null);
-		log.info("Get dog by id: {}", id);
-
-		return new DogResponseDto(
+		// 4. ResponseDto 생성
+		CreateDogResponseDto responseDto = new CreateDogResponseDto(
 			dog.getId(),
-			dog.getUserId(),
-			dog.getPersonalityCombinationId(),
+			userId,
+			combination.getId(),
 			dog.getName(),
 			dog.getGender(),
 			dog.getBirth(),
-			dog.getCallName(),
-			dog.getStatus(),
-			dog.getCreatedAt(),
-			dog.getUpdatedAt(),
-			dog.getDeletedAt()
+			dto.getCallName(),
+			dog.getCreatedAt()
 		);
 
+		return responseDto;
 	}
 
-	/**
-	 * 📍 강아지 이름 수정
-	 * @param id 강아지 id
-	 * @param dto 강아지 id, 수정할 이름
-	 * @return 수정된 강아지 이름 정보 (id, 이름, 수정 시각)
-	 */
-	@Transactional
-	public UpdateDogNameResponseDto updateDogName(Long id, UpdateDogNameRequestDto dto) {
-		Dog dog = dogRepository.findById(id).orElseThrow(() ->
-			new IllegalArgumentException("Dog not found"));
+	// 강아지 전체 조회
 
-		log.info("Update dog name: {}", dto.getNewName());
+	// 강아지 상세 조회
 
-		dog.setName(dto.getNewName());
-		dog.setUpdatedAt(LocalDateTime.now());
-
-		Dog updatedDog = dogRepository.save(dog);
-
-		return new UpdateDogNameResponseDto(
-			updatedDog.getId(),
-			updatedDog.getName(),
-			updatedDog.getUpdatedAt()
-		);
-	}
 
 	/**
-	 * 📍 강아지 애칭 수정
-	 * @param id 강아지 id
-	 * @param dto 강아지 id, 수정할 주인 애칭
-	 * @return 수정된 강아지 애칭 정보 (id, 애칭, 수정 시각)
+	 * 📍 강아지 이름 수정 서비스 메서드
+	 * - 강아지 ID로 엔티티를 조회하고 존재 여부를 확인
+	 * - DogOwner 테이블에서 해당 강아지의 소유자가 현재 사용자(userId)인지 검증
+	 * - 소유자 검증 후 이름과 수정일(updatedAt)을 갱신하고 저장
+	 * - 수정 완료 시 수정된 강아지 정보를 담은 Response DTO 반환
+	 *
+	 * @param dogId  수정할 강아지의 ID
+	 * @param dto    강아지 이름 수정 요청 DTO (newName 포함)
+	 * @param userId 현재 로그인된 사용자 ID
+	 * @return 수정된 강아지 정보를 담은 UpdateDogNameResponseDto
+	 * @throws IllegalArgumentException 강아지가 존재하지 않거나 잘못된 ID인 경우
+	 * @throws SecurityException 요청 사용자가 강아지의 소유자가 아닌 경우
+	 * @throws RuntimeException 이름 수정 처리 중 서버 오류 발생 시
 	 */
 	@Transactional
-	public UpdateDogCallNameResponseDto updateDogCallName(Long id, UpdateDogCallNameRequestDto dto) {
-		Dog dog = dogRepository.findById(id).orElseThrow(() ->
-			new IllegalArgumentException("Dog not found"));
+	public UpdateDogNameResponseDto updateDogName(Long dogId, UpdateDogNameRequestDto dto, Long userId) {
+		log.info("🔄 강아지 이름 수정 요청 - dogId: {}, userId: {}, newName: {}", dogId, userId, dto.getNewName());
 
-		log.info("Update call name: {}", dto.getNewCallName());
+		try {
+			// 강아지 엔티티 조회
+			Dog dog = dogRepository.findById(dogId)
+				.orElseThrow(() -> {
+					log.warn("❌ 강아지 조회 실패 - dogId: {}", dogId);
+					return new IllegalArgumentException("해당 강아지가 존재하지 않습니다.");
+				});
 
-		dog.setCallName(dto.getNewCallName());
-		dog.setUpdatedAt(LocalDateTime.now());
+			// 소유자 권한 체크
+			boolean isOwner = dogOwnerRepository.existsByDogIdAndUserId(dogId, userId);
+			if (!isOwner) {
+				log.warn("🚫 권한 없음 - 요청 userId: {}, dogId: {}", userId, dogId);
+				throw new SecurityException("본인 소유의 강아지만 이름을 수정할 수 있습니다.");
+			}
 
-		Dog updatedDog = dogRepository.save(dog);
+			// 이름 수정
+			dog.setName(dto.getNewName());
+			dog.setUpdatedAt(LocalDateTime.now());
+			dogRepository.save(dog);
 
-		return new UpdateDogCallNameResponseDto(
-			updatedDog.getId(),
-			updatedDog.getCallName(),
-			updatedDog.getUpdatedAt()
-		);
-	}
+			log.info("✅ 강아지 이름 수정 성공 - dogId: {}, updatedName: {}", dogId, dog.getName());
+			return new UpdateDogNameResponseDto(dog.getId(), dog.getName(), dog.getUpdatedAt());
 
-	/**
-	 * 📍 강아지 성격 수정
-	 * @param id 강아지 id
-	 * @param dto 강아지 id, 바꿀 성격 id 1, 바꿀 성격 id 2
-	 * @return 수정된 강아지 성격 정보 (id, 성격 조합 id, 바뀐 성격 이름, 수정 일자)
-	 */
-	@Transactional
-	public UpdateDogPersonalityResponseDto updateDogPersonality(Long id, UpdateDogPersonalityRequestDto dto) {
-		Dog dog = dogRepository.findById(id).orElseThrow(() ->
-			new IllegalArgumentException("Dog not found"));
-
-		Long newPersonalityId1 = dto.getNewPersonalityId1();  // 필수
-		Long newPersonalityId2 = dto.getNewPersonalityId2();  // null 가능
-
-		if (newPersonalityId1 == null) {
-			throw new IllegalArgumentException("성격 하나는 반드시 선택해야 함");
+		} catch (IllegalArgumentException | SecurityException e) {
+			log.error("⚠️ 강아지 이름 수정 실패 - {}", e.getMessage());
+			throw e;
+		} catch (Exception e) {
+			log.error("❌ 강아지 이름 수정 처리 중 예외 발생", e);
+			throw new RuntimeException("강아지 이름 수정 중 서버 오류가 발생했습니다.", e);
 		}
-
-		// 같은 값 두 번 선택한 경우 -> 하나만 사용
-		if (newPersonalityId2 != null && newPersonalityId1.equals(newPersonalityId2)) {
-			newPersonalityId2 = null;
-		}
-
-		// 정렬 (순서에 상관없이 동일한 조합으로 판단)
-		Long first = (newPersonalityId2 == null || newPersonalityId1 < newPersonalityId2) ? newPersonalityId1 :
-			newPersonalityId2;
-		Long second = (newPersonalityId2 == null || newPersonalityId1 < newPersonalityId2) ? newPersonalityId2 :
-			newPersonalityId1;
-
-		// 조합 조회 or 생성
-		PersonalityCombination combination = personalityCombinationRepository
-			.findByPersonalityId1AndPersonalityId2(first, second)
-			.orElseGet(() -> {
-				PersonalityCombination newCombo = new PersonalityCombination();
-				newCombo.setPersonalityId1(first);
-				newCombo.setPersonalityId2(second); // p2가 null이면 null 저장됨
-				return personalityCombinationRepository.save(newCombo);
-			});
-
-		// 강아지에 조합 ID 설정
-		dog.setPersonalityCombinationId(combination.getId());
-		dog.setUpdatedAt(LocalDateTime.now());
-
-		// 저장
-		Dog updatedDog = dogRepository.save(dog);
-
-		// 성격 이름 조회
-		List<String> personalityNames = new ArrayList<>();
-		dogPersonalityRepository.findById(first)
-			.ifPresent(p -> personalityNames.add(p.getName()));
-		if (second != null) {
-			dogPersonalityRepository.findById(second)
-				.ifPresent(p -> personalityNames.add(p.getName()));
-		}
-
-		// 응답
-		return new UpdateDogPersonalityResponseDto(
-			updatedDog.getId(),
-			combination.getId(),
-			personalityNames,
-			updatedDog.getUpdatedAt()
-		);
 	}
 
 	/**
-	 * 📍 강아지 삭제
-	 * @param id 강아지 id
-	 * @param dto 강아지 id
-	 * @return 삭제된 강아지 정보 (id, 이름, 상태(INACTIVE), 삭제일자)
+	 * 📍 강아지 애칭 수정 서비스 메서드
+	 * - 강아지 ID로 엔티티를 조회하고 존재 여부를 확인
+	 * - DogOwner 테이블에서 해당 강아지의 소유자가 현재 사용자(userId)인지 검증
+	 * - 소유자 검증 후 애칭과 수정일(updatedAt)을 갱신하고 저장
+	 * - 수정 완료 시 수정된 강아지 정보를 담은 Response DTO 반환
+	 *
+	 * @param dogId  수정할 강아지의 ID
+	 * @param dto    강아지 애칭 수정 요청 DTO (newCallName 포함)
+	 * @param userId 현재 로그인된 사용자 ID
+	 * @return 수정된 강아지 정보를 담은 UpdateDogNameResponseDto
+	 * @throws IllegalArgumentException 강아지가 존재하지 않거나 잘못된 ID인 경우
+	 * @throws SecurityException 요청 사용자가 강아지의 소유자가 아닌 경우
+	 * @throws RuntimeException 애칭 수정 처리 중 서버 오류 발생 시
 	 */
 	@Transactional
-	public DeleteDogResponseDto deleteDog(Long id, DeleteDogRequestDto dto) {
-		Dog dog = dogRepository.findById(id).orElseThrow(() ->
-			new IllegalArgumentException("Dog not found"));
+	public UpdateDogCallNameResponseDto updateDogCallName(Long dogId, UpdateDogCallNameRequestDto dto, Long userId) {
+		log.info("🔄 강아지 애칭 수정 요청 - dogId: {}, userId: {}, newCallName: {}", dogId, userId, dto.getNewCallName());
 
-		log.info("Delete dog: {}", dto.getDogId());
+		try {
+			// DogOwner 엔티티 조회
+			DogOwner dogOwner = dogOwnerRepository.findByDogIdAndUserId(dogId, userId)
+				.orElseThrow(() -> {
+					log.warn("❌ DogOwner 조회 실패 - dogId: {}, userId: {}", dogId, userId);
+					return new IllegalArgumentException("해당 강아지의 소유자 정보가 존재하지 않습니다.");
+				});
 
-		dog.setStatus(Status.INACTIVE);
-		dog.setDeletedAt(LocalDateTime.now());
+			// 소유자 권한 체크
+			boolean isOwner = dogOwnerRepository.existsByDogIdAndUserId(dogId, userId);
+			if (!isOwner) {
+				log.warn("🚫 권한 없음 - 요청 userId: {}, dogId: {}", userId, dogId);
+				throw new SecurityException("본인 소유의 강아지만 애칭을 수정할 수 있습니다.");
+			}
 
-		Dog updatedDog = dogRepository.save(dog);
+			// 애칭 수정
+			dogOwner.setName(dto.getNewCallName());
+			dogOwner.setUpdatedAt(LocalDateTime.now());
+			dogOwnerRepository.save(dogOwner);
 
-		return new DeleteDogResponseDto(
-			updatedDog.getId(),
-			updatedDog.getName(),
-			updatedDog.getStatus(),
-			updatedDog.getDeletedAt()
-		);
+			log.info("✅ 강아지 애칭 수정 성공 - dogId: {}, updatedCallName: {}", dogId, dogOwner.getName());
+			return new UpdateDogCallNameResponseDto(dogId, dogOwner.getName(), dogOwner.getUpdatedAt());
+
+		} catch (IllegalArgumentException e) {
+			log.error("⚠️ 강아지 애칭 수정 실패 - {}", e.getMessage());
+			throw e;
+		} catch (Exception e) {
+			log.error("❌ 강아지 애칭 수정 처리 중 예외 발생", e);
+			throw new RuntimeException("강아지 애칭 수정 중 서버 오류가 발생했습니다.", e);
+		}
 	}
 }

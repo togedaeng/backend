@@ -15,6 +15,10 @@ public class PersonalityCombination {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	// 반려견 ID
+	@Column(name = "dog_id", nullable = false)
+	private Long dogId;
+
 	// 성격 ID 1
 	@Column(name = "personality_id_1", nullable = false)
 	private Long personalityId1;
@@ -26,8 +30,9 @@ public class PersonalityCombination {
 	public PersonalityCombination() {
 	}
 
-	public PersonalityCombination(Long id, Long personalityId1, Long personalityId2) {
+	public PersonalityCombination(Long id, Long dogId, Long personalityId1, Long personalityId2) {
 		this.id = id;
+		this.dogId = dogId;
 		this.personalityId1 = personalityId1;
 		this.personalityId2 = personalityId2;
 	}
@@ -38,6 +43,14 @@ public class PersonalityCombination {
 
 	public void setId(Long id) {
 		this.id = id;
+	}
+
+	public Long getDogId() {
+		return dogId;
+	}
+
+	public void setDogId(Long dogId) {
+		this.dogId = dogId;
 	}
 
 	public Long getPersonalityId1() {
@@ -60,6 +73,7 @@ public class PersonalityCombination {
 	public String toString() {
 		return "PersonalityCombination{" +
 			"id=" + id +
+			", dogId=" + dogId +
 			", personalityId1=" + personalityId1 +
 			", personalityId2=" + personalityId2 +
 			'}';

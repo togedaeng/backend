@@ -1,60 +1,53 @@
-package com.ohgiraffers.togedaeng.backend.domain.dog.entity;
+package com.ohgiraffers.togedaeng.backend.domain.custom.entity;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Getter
 @Setter
 @Entity
-@Table(name = "dogs")
-public class Dog {
+@Table(name = "holds")
+public class Hold {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	// 반려견 이름
-	@Column(length = 50, nullable = false)
-	private String name;
+	@Column(name = "custom_id", nullable = false)
+	private Long customId;
 
-	// 반려견 성별
-	@Enumerated(EnumType.STRING)
-	private Gender gender;
+	// 보류 사유
+	private String reason;
 
-	// 반려견 생년월일
-	private LocalDate birth;
-
-	@Enumerated(EnumType.STRING)
-	private Status status;
-
-	// 렌더링 이미지 URL
-	@Column(name = "rendered_url")
-	private String renderedUrl;
-
-	@Column(name = "created_at")
+	// 커스텀 보류일
+	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
 
+	// 보류 수정일 (보류 사유 수정)
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 
+	// 보류 삭제일 (커스텀 요청 상태가 CANCELLED로 바뀌었을 때)
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
+
+	public Hold(Long customId, String reason, LocalDateTime createdAt) {
+		this.customId = customId;
+		this.reason = reason;
+		this.createdAt = createdAt;
+	}
+
 }

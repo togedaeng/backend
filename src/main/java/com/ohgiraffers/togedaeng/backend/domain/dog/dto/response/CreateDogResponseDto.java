@@ -7,9 +7,11 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 public class CreateDogResponseDto {
@@ -22,9 +24,5 @@ public class CreateDogResponseDto {
 	private LocalDate birth;
 	private String callName;
 	private LocalDateTime createdAt;
-	private LocalDateTime updatedAt;
-	private LocalDateTime deletedAt;
 
-	public CreateDogResponseDto() {
-	}
 }

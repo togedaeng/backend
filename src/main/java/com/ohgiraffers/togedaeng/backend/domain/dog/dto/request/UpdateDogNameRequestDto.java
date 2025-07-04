@@ -1,28 +1,22 @@
 package com.ohgiraffers.togedaeng.backend.domain.dog.dto.request;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 public class UpdateDogNameRequestDto {
 
 	private String newName;
 
-	public UpdateDogNameRequestDto() {
-	}
-
-	public UpdateDogNameRequestDto(String newName) {
-		this.newName = newName;
-	}
-
-	public String getNewName() {
-		return newName;
-	}
-
-	public void setNewName(String newName) {
-		this.newName = newName;
-	}
-
 	@Override
 	public String toString() {
 		return "UpdateDogNameRequestDto{" +
-			", newName='" + newName + '\'' +
+			"newName='" + newName + '\'' +
 			'}';
 	}
 }
