@@ -12,4 +12,8 @@ public interface DogOwnerRepository extends JpaRepository<DogOwner, Long> {
 	boolean existsByDogIdAndUserId(Long dogId, Long userId);
 
 	Optional<DogOwner> findByDogIdAndUserId(Long dogId, Long userId);
+
+	Optional<DogOwner> findFirstByDogId(Long dogId);
+
+	DogOwner findByDogId(Long dogId);
 }

@@ -9,5 +9,8 @@ import org.springframework.data.repository.query.Param;
 import com.ohgiraffers.togedaeng.backend.domain.personality.entity.PersonalityCombination;
 
 public interface PersonalityCombinationRepository extends JpaRepository<PersonalityCombination, Long> {
-	Optional<PersonalityCombination> findByDogIdAndPersonalityId1AndPersonalityId2(Long dogId, Long personalityId1, Long personalityId2);
+	Optional<PersonalityCombination> findByDogIdAndPersonalityId1AndPersonalityId2(Long dogId, Long personalityId1,
+			Long personalityId2);
+
+	Optional<PersonalityCombination> findByDogId(Long dogId);
 }

@@ -8,5 +8,5 @@ import com.ohgiraffers.togedaeng.backend.domain.personality.entity.DogPersonalit
 
 public interface DogPersonalityRepository extends JpaRepository<DogPersonality, Long> {
 
-
+  // findByDogId 메서드 삭제
 }
