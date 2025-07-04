@@ -3,7 +3,7 @@ package com.ohgiraffers.togedaeng.backend.domain.user.model.entity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Gender;
+import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

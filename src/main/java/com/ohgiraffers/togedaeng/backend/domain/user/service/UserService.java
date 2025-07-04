@@ -8,9 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.ohgiraffers.togedaeng.backend.domain.Ndog.repository.DogRepository;
-import com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Dog;
-import com.ohgiraffers.togedaeng.backend.domain.Ndog.entity.Status;
+import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.DeleteUserResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserInfoRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserNicknameUpdateDto;
