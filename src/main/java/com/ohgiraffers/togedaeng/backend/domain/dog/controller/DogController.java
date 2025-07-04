@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
@@ -18,6 +19,8 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameReq
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.CreateDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogListResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogDetailResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.service.DogService;
 import com.ohgiraffers.togedaeng.backend.domain.custom.service.CustomService;
 import com.ohgiraffers.togedaeng.backend.global.auth.service.JwtExtractor;
@@ -25,13 +28,14 @@ import com.ohgiraffers.togedaeng.backend.global.auth.service.JwtExtractor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/dog")
 @RequiredArgsConstructor
 public class DogController {
 
-	Logger log = LoggerFactory.getLogger(DogController.class);
+	private static final Logger log = LoggerFactory.getLogger(DogController.class);
 
 	private final DogService dogService;
 	private final CustomService customService;
@@ -46,13 +50,13 @@ public class DogController {
 	 * 요청 경로: POST /api/dogs/create
 	 *
 	 * @param createDogRequestDto 강아지 등록 요청 DTO (이미지 포함)
-	 * @param request HttpServletRequest (JWT 토큰에서 userId 추출용)
+	 * @param request             HttpServletRequest (JWT 토큰에서 userId 추출용)
 	 * @return 등록 성공 시 200 OK, 실패 시 500 서버 에러
 	 */
 	@PostMapping("/create")
 	public ResponseEntity<CreateDogResponseDto> createDog(
-		@ModelAttribute @Valid CreateDogRequestDto createDogRequestDto,
-		HttpServletRequest request) {
+			@ModelAttribute @Valid CreateDogRequestDto createDogRequestDto,
+			HttpServletRequest request) {
 		log.info("🐶 [강아지 등록] POST /api/dog/create 요청 수신");
 
 		try {
@@ -73,9 +77,58 @@ public class DogController {
 		}
 	}
 
-	// 강아지 전체 조회
+	/**
+	 * 📍 강아지 전체 조회 API
+	 * - 모든 강아지 정보를 리스트로 반환한다.
+	 *
+	 * - 요청 방식: GET
+	 * - 요청 경로: /api/dog
+	 *
+	 * @return 전체 강아지 리스트 (DogListResponseDto)
+	 */
+	@GetMapping
+	public ResponseEntity<List<DogListResponseDto>> getAllDogs() {
+		log.info("🔍 강아지 전체 조회 요청");
 
-	// 사용자별 강아지 조회
+		try {
+			List<DogListResponseDto> result = dogService.getAllDogs();
+			log.info("✅ 강아지 전체 조회 성공 - count: {}", result.size());
+			return ResponseEntity.ok(result);
+		} catch (IllegalArgumentException e) {
+			log.warn("⚠️ 강아지 전체 조회 실패 - {}", e.getMessage());
+			return ResponseEntity.badRequest().build();
+		} catch (Exception e) {
+			log.error("❌ 강아지 전체 조회 중 서버 오류", e);
+			return ResponseEntity.status(500).build();
+		}
+	}
+
+	/**
+	 * 📍 강아지 단일 상세 조회 API
+	 * - 특정 강아지의 상세 정보를 반환한다.
+	 *
+	 * - 요청 방식: GET
+	 * - 요청 경로: /api/dog/{id}
+	 *
+	 * @param dogId 조회할 강아지 ID (PathVariable)
+	 * @return 강아지 상세 정보 (DogDetailResponseDto)
+	 */
+	@GetMapping("/{id}")
+	public ResponseEntity<DogDetailResponseDto> getDogById(@PathVariable("id") Long dogId) {
+		log.info("🔍 강아지 단일 상세 조회 요청 - dogId: {}", dogId);
+
+		try {
+			DogDetailResponseDto result = dogService.getDogById(dogId);
+			log.info("✅ 강아지 단일 상세 조회 성공 - dogId: {}", dogId);
+			return ResponseEntity.ok(result);
+		} catch (IllegalArgumentException e) {
+			log.warn("⚠️ 강아지 단일 상세 조회 실패 - {}", e.getMessage());
+			return ResponseEntity.badRequest().build();
+		} catch (Exception e) {
+			log.error("❌ 강아지 단일 상세 조회 중 서버 오류 - dogId: {}", dogId, e);
+			return ResponseEntity.status(500).build();
+		}
+	}
 
 	/**
 	 * 📍 강아지 이름 수정 API
@@ -96,10 +149,9 @@ public class DogController {
 	 */
 	@PatchMapping("/{id}/name")
 	public ResponseEntity<UpdateDogNameResponseDto> updateDogName(
-		@PathVariable("id") Long id,
-		@RequestBody UpdateDogNameRequestDto requestDto,
-		HttpServletRequest request
-	) {
+			@PathVariable("id") Long id,
+			@RequestBody UpdateDogNameRequestDto requestDto,
+			HttpServletRequest request) {
 		log.info("🐶 [강아지 이름 수정] PATCH /api/dog/{id}/name 요청 수신");
 
 		try {
@@ -129,17 +181,16 @@ public class DogController {
 	 * 요청 방식: PATCH
 	 * 요청 경로: /api/dogs/{id}/call-name
 	 *
-	 * @param id        경로 변수로 전달받는 강아지 ID
+	 * @param id         경로 변수로 전달받는 강아지 ID
 	 * @param requestDto 애칭 수정 요청 DTO
-	 * @param request   HttpServletRequest (JWT 토큰에서 userId 추출)
+	 * @param request    HttpServletRequest (JWT 토큰에서 userId 추출)
 	 * @return 수정 결과 ResponseEntity
 	 */
 	@PatchMapping("/{id}/call-name")
 	public ResponseEntity<UpdateDogCallNameResponseDto> updateDogCallName(
-		@PathVariable("id") Long id,
-		@RequestBody UpdateDogCallNameRequestDto requestDto,
-		HttpServletRequest request
-	) {
+			@PathVariable("id") Long id,
+			@RequestBody UpdateDogCallNameRequestDto requestDto,
+			HttpServletRequest request) {
 		log.info("🐶 [강아지 애칭 수정] PATCH /api/dogs/{}/call-name 요청 수신", id);
 
 		try {
