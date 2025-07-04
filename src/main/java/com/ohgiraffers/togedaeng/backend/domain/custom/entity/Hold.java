@@ -43,4 +43,11 @@ public class Hold {
 	// 보류 삭제일 (커스텀 요청 상태가 CANCELLED로 바뀌었을 때)
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
+
+	public Hold(Long customId, String reason, LocalDateTime createdAt) {
+		this.customId = customId;
+		this.reason = reason;
+		this.createdAt = createdAt;
+	}
+
 }

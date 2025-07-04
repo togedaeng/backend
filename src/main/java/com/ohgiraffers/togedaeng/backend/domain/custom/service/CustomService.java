@@ -8,6 +8,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusHoldRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusHoldResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Hold;
+import com.ohgiraffers.togedaeng.backend.domain.custom.repository.HoldRepository;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.dog.exception.ImageUploadException;
@@ -36,6 +40,7 @@ public class CustomService {
 	private final S3Uploader s3Uploader;
 	private final DogImageRepository dogImageRepository;
 	private final DogRepository dogRepository;
+	private final HoldRepository holdRepository;
 
 	/**
 	 * 📍 강아지 등록 시 함께 커스텀 요청을 생성하는 메서드
@@ -134,6 +139,59 @@ public class CustomService {
 		return responseDto;
 	}
 
+	/**
+	 * 📍 커스텀 요청 상태를 '보류(HOLD)'로 변경하는 메서드
+	 * - 커스텀 요청 ID로 해당 요청을 조회하고 존재하지 않으면 예외 발생
+	 * - 상태를 HOLD로 변경하고, 관리자 ID를 설정
+	 * - 보류 사유를 Hold 엔티티로 새로 저장
+	 * - 해당 커스텀 요청에 연결된 강아지의 상태를 SUSPENDED로 변경
+	 * - 변경된 커스텀 요청 및 보류 정보를 담은 응답 DTO를 반환
+	 *
+	 * @param customId 변경할 커스텀 요청의 ID
+	 * @param dto     관리자 ID와 보류 사유를 포함한 상태 변경 요청 DTO
+	 * @return 상태 변경 결과를 담은 UpdateCustomStatusHoldResponseDto
+	 * @throws IllegalArgumentException 존재하지 않는 커스텀 요청 또는 강아지일 경우
+	 * @throws IllegalStateException    이미 HOLD 또는 COMPLETED 상태일 경우
+	 */
+	@Transactional
+	public UpdateCustomStatusHoldResponseDto updateCustomStatusHold(Long customId, UpdateCustomStatusHoldRequestDto dto) {
+
+		// 커스텀 요청 조회
+		Custom custom = customRepository.findById(customId)
+			.orElseThrow(() -> new IllegalArgumentException("Custom 요청을 찾을 수 없습니다. ID=" + customId));
+
+		// 상태 검증
+		if (custom.getStatus() == Status.HOLD || custom.getStatus() == Status.COMPLETED) {
+			throw new IllegalStateException("이미 보류 중이거나 완료된 요청은 보류 처리할 수 없습니다.");
+		}
+
+		// 상태 변경 및 관리자 ID 등록
+		custom.setStatus(Status.HOLD);
+		custom.setAdminId(dto.getAdminId());
+		customRepository.save(custom);
+
+		// Hold 엔티티 생성 및 저장
+		Hold hold = new Hold(custom.getId(), dto.getReason(), LocalDateTime.now());
+		holdRepository.save(hold);
+
+		// 강아지 상태 SUSPENDED로 변경
+		Dog dog = dogRepository.findById(custom.getDogId())
+			.orElseThrow(() -> new IllegalArgumentException("강아지를 찾을 수 없습니다. ID=" + custom.getDogId()));
+		dog.setStatus(com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status.SUSPENDED);
+		dogRepository.save(dog);
+
+		// 응답 DTO 생성 및 반환
+		UpdateCustomStatusHoldResponseDto responseDto = new UpdateCustomStatusHoldResponseDto(
+			custom.getId(),
+			dog.getId(),
+			custom.getAdminId(),
+			custom.getStatus(),
+			hold.getReason(),
+			hold.getCreatedAt()
+		);
+
+		return responseDto;
+	}
 
 	/**
 	 * 📍 커스텀 요청 상태를 '취소(CANCELLED)'로 변경하는 메서드
