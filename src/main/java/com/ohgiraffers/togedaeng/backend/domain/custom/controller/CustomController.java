@@ -3,13 +3,16 @@ package com.ohgiraffers.togedaeng.backend.domain.custom.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCompletedRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusHoldRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusCompletedResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusHoldResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.controller.DogController;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCanceledRequestDto;
@@ -102,7 +105,39 @@ public class CustomController {
 		}
 	}
 
-	// 커스텀 상태 변경 - 완료 -> 렌더링 이미지 dog에 저장 후 상태 변경, 강아지 상태는 APPROVED
+	/**
+	 * 📍 커스텀 요청 상태를 '완료(COMPLETED)'로 변경하는 API
+	 * - 렌더링 이미지 파일과 관리자 ID를 받아 S3 업로드 후 Dog에 저장
+	 * - 커스텀 상태를 COMPLETED로 변경
+	 *
+	 * 요청 방식: PUT
+	 * 요청 경로: /api/custom/{id}/completed
+	 *
+	 * @param customId 커스텀 요청 ID (PathVariable)
+	 * @param dto 관리자 ID 및 렌더링 이미지 포함 DTO (Multipart)
+	 * @return 상태 변경 결과 DTO와 함께 200 OK 반환
+	 */
+	@PutMapping("/{id}/completed")
+	public ResponseEntity<UpdateCustomStatusCompletedResponseDto> updateCustomStatusCompleted(
+		@PathVariable("id") Long customId,
+		@ModelAttribute UpdateCustomStatusCompletedRequestDto dto
+	) {
+		log.info("✅ 커스텀 요청 완료 처리 요청 - customId: {}, adminId: {}", customId, dto.getAdminId());
+
+		try {
+			UpdateCustomStatusCompletedResponseDto responseDto =
+				customService.updateCustomStatusCompleted(customId, dto);
+
+			log.info("🎉 커스텀 요청 완료 처리 성공 - customId: {}", customId);
+			return ResponseEntity.ok(responseDto);
+		} catch (IllegalArgumentException e) {
+			log.warn("⚠️ 커스텀 완료 처리 실패 - {}", e.getMessage());
+			return ResponseEntity.badRequest().build();
+		} catch (Exception e) {
+			log.error("❌ 커스텀 완료 처리 중 서버 오류 발생", e);
+			return ResponseEntity.status(500).build();
+		}
+	}
 
 	/**
 	 * 📍 커스텀 요청 상태를 '취소(CANCELLED)'로 변경하는 API

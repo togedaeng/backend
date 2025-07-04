@@ -20,7 +20,7 @@ public class UpdateCustomStatusCompletedResponseDto {
 	private Long adminId;
 	private Status status;
 	private String renderedImageUrl;
-	private LocalDateTime completed_at;
+	private LocalDateTime completedAt;
 
 	@Override
 	public String toString() {
@@ -30,7 +30,7 @@ public class UpdateCustomStatusCompletedResponseDto {
 			", adminId=" + adminId +
 			", status=" + status +
 			", renderedImageUrl='" + renderedImageUrl + '\'' +
-			", completed_at=" + completed_at +
+			", completed_at=" + completedAt +
 			'}';
 	}
 }

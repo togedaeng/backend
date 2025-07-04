@@ -8,7 +8,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCompletedRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusHoldRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusCompletedResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusHoldResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Hold;
 import com.ohgiraffers.togedaeng.backend.domain.custom.repository.HoldRepository;
@@ -192,6 +194,63 @@ public class CustomService {
 
 		return responseDto;
 	}
+
+	/**
+	 * 📍 커스텀 요청 상태를 '완료(COMPLETED)'로 변경하는 메서드
+	 * - 커스텀 요청 ID로 요청 조회, 상태 검증
+	 * - 렌더링 이미지 S3 업로드 후 Dog 엔티티에 저장
+	 * - 커스텀 요청 상태 COMPLETED로 변경 및 완료일자 설정
+	 * - 강아지 상태 APPROVED로 변경
+	 *
+	 * @param customId 변경할 커스텀 요청 ID
+	 * @param dto 관리자 ID 및 렌더링 이미지 포함 DTO
+	 * @return 완료 상태로 변경된 커스텀 요청 정보 DTO
+	 * @throws IllegalArgumentException 존재하지 않는 커스텀 요청 또는 강아지일 경우
+	 * @throws IOException S3 업로드 실패 시
+	 */
+	@Transactional
+	public UpdateCustomStatusCompletedResponseDto updateCustomStatusCompleted(
+		Long customId,
+		UpdateCustomStatusCompletedRequestDto dto
+	) throws IOException {
+		Long adminId = dto.getAdminId();
+		MultipartFile renderedImage = dto.getRenderedImage();
+
+		// 커스텀 요청 조회
+		Custom custom = customRepository.findById(customId)
+			.orElseThrow(() -> new IllegalArgumentException("커스텀 요청을 찾을 수 없습니다. ID=" + customId));
+
+		if (custom.getStatus() != Status.IN_PROGRESS) {
+			throw new IllegalStateException("현재 요청은 완료 처리할 수 없습니다. 상태: " + custom.getStatus());
+		}
+
+		// 렌더링 이미지 S3 업로드
+		String uploadedUrl = s3Uploader.upload(renderedImage, "dog-images/rendered");
+
+		// Dog 엔티티에 렌더링 이미지 URL 저장 및 상태 변경
+		Dog dog = dogRepository.findById(custom.getDogId())
+			.orElseThrow(() -> new IllegalArgumentException("강아지를 찾을 수 없습니다. ID=" + custom.getDogId()));
+		dog.setRenderedUrl(uploadedUrl);
+		dog.setStatus(com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status.APPROVED);
+		dogRepository.save(dog);
+
+		// Custom 상태 및 완료일자 갱신
+		custom.setStatus(Status.COMPLETED);
+		custom.setAdminId(adminId);
+		custom.setCompletedAt(LocalDateTime.now());
+		customRepository.save(custom);
+
+		// 응답 DTO 생성 및 반환
+		return new UpdateCustomStatusCompletedResponseDto(
+			custom.getId(),
+			dog.getId(),
+			custom.getAdminId(),
+			custom.getStatus(),
+			dog.getRenderedUrl(),
+			custom.getCompletedAt()
+		);
+	}
+
 
 	/**
 	 * 📍 커스텀 요청 상태를 '취소(CANCELLED)'로 변경하는 메서드
