@@ -39,6 +39,18 @@ public class Dog {
 	@Enumerated(EnumType.STRING)
 	private Gender gender;
 
+	// 반려견 주인 ID -> 추가
+	@Column(name = "user_id", nullable = false)
+	private Long userId;
+
+	// 반려견 애칭 -> 추가
+	@Column(name = "call_name", nullable = false)
+	private String callName;
+
+	// 반려견 성격 조합 ID -> 추가
+	@Column(name = "personality_combination_id")
+	private Long personalityCombinationId;
+
 	// 반려견 생년월일
 	private LocalDate birth;
 
@@ -57,4 +69,6 @@ public class Dog {
 
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
+
+
 }

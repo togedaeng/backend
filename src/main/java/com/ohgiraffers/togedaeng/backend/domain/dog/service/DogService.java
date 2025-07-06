@@ -59,7 +59,10 @@ public class DogService {
 			Dog.builder()
 				.name(dto.getName())
 				.gender(dto.getGender())
+				// 추가 필드
+				.userId(userId)
 				.birth(dto.getBirth())
+				.callName(dto.getCallName())
 				.status(Status.REGISTERED)
 				.createdAt(LocalDateTime.now())
 				.build()
@@ -93,6 +96,10 @@ public class DogService {
 
 		combination.setDogId(dog.getId());
 		personalityCombinationRepository.save(combination);
+
+
+
+
 		log.debug("🧠 성격 조합 저장 완료 - dogId: {}, p1: {}, p2: {}", dog.getId(), first, second);
 
 		// 3. DogOwner 저장
