@@ -25,6 +25,7 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogListResponse
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogDetailResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.service.DogService;
 import com.ohgiraffers.togedaeng.backend.domain.custom.service.CustomService;
+import com.ohgiraffers.togedaeng.backend.domain.notification.service.SlackNotificationService;
 import com.ohgiraffers.togedaeng.backend.global.auth.service.JwtExtractor;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,6 +43,7 @@ public class DogController {
 	private final DogService dogService;
 	private final CustomService customService;
 	private final JwtExtractor jwtExtractor;
+	private final SlackNotificationService slackNotificationService;
 
 	/**
 	 * 📍 강아지 등록 및 커스텀 메인 이미지 업로드 API
@@ -70,6 +72,9 @@ public class DogController {
 
 			Long customId = customService.uploadMainImage(responseDto.getId(), createDogRequestDto.getMainImage());
 			log.info("📦 커스텀 메인 이미지 업로드 완료 - customId: {}", customId);
+
+			// ✅ Slack 알림 전송 (커스텀 요청 완성 후)
+			slackNotificationService.sendSlackNotification(responseDto);
 
 			return ResponseEntity.ok(customId);
 
@@ -108,20 +113,25 @@ public class DogController {
 	}
 
 	/**
-	 * 📍 강아지 전체 조회 API
-	 * - 모든 강아지 정보를 리스트로 반환한다.
+	 * 📍 강아지 전체 조회 API (페이지네이션)
+	 * - 모든 강아지 정보를 페이지네이션으로 반환한다.
+	 * - 기본 페이지 크기는 8개이며, 사용자가 지정할 수 있다.
 	 *
 	 * - 요청 방식: GET
 	 * - 요청 경로: /api/dog
 	 *
-	 * @return 전체 강아지 리스트 (DogListResponseDto)
+	 * @param page 페이지 번호 (기본값: 0)
+	 * @param size 페이지 크기 (기본값: 8)
+	 * @return 페이지네이션된 강아지 리스트 (DogListResponseDto)
 	 */
 	@GetMapping
-	public ResponseEntity<List<DogListResponseDto>> getAllDogs() {
-		log.info("🔍 강아지 전체 조회 요청");
+	public ResponseEntity<List<DogListResponseDto>> getAllDogs(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "8") int size) {
+		log.info("🔍 강아지 전체 조회 요청 - page: {}, size: {}", page, size);
 
 		try {
-			List<DogListResponseDto> result = dogService.getAllDogs();
+			List<DogListResponseDto> result = dogService.getAllDogs(page, size);
 			log.info("✅ 강아지 전체 조회 성공 - count: {}", result.size());
 			return ResponseEntity.ok(result);
 		} catch (IllegalArgumentException e) {

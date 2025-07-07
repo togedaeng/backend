@@ -7,6 +7,9 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
@@ -106,18 +109,22 @@ public class DogService {
 
 	/**
 	 * 📍 강아지 전체 조회 서비스
-	 * - 모든 강아지 정보를 리스트로 반환한다.
+	 * - 모든 강아지 정보를 페이지네이션으로 반환한다.
 	 * - 각 강아지별로 대표 소유자(첫 DogOwner)의 닉네임을 ownerNickname으로 반환한다.
 	 *
-	 * @return 전체 강아지 리스트 (DogListResponseDto)
+	 * @param page 페이지 번호 (0부터 시작)
+	 * @param size 페이지 크기
+	 * @return 페이지네이션된 강아지 리스트 (DogListResponseDto)
 	 */
-	public List<DogListResponseDto> getAllDogs() {
-		log.info("🔍 강아지 전체 조회 서비스 시작");
+	public List<DogListResponseDto> getAllDogs(int page, int size) {
+		log.info("🔍 강아지 전체 조회 서비스 시작 - page: {}, size: {}", page, size);
 
 		try {
-			List<Dog> dogs = dogRepository.findAll();
+			Pageable pageable = PageRequest.of(page, size);
+			Page<Dog> dogsPage = dogRepository.findAll(pageable);
+			
 			List<DogListResponseDto> result = new ArrayList<>();
-			for (Dog dog : dogs) {
+			for (Dog dog : dogsPage.getContent()) {
 				DogOwner dogOwner = dogOwnerRepository.findByDogId(dog.getId());
 				String ownerNickname = null;
 				if (dogOwner != null) {
@@ -132,7 +139,8 @@ public class DogService {
 						dog.getCreatedAt(),
 						dog.getDeletedAt()));
 			}
-			log.info("✅ 강아지 전체 조회 서비스 성공 - count: {}", result.size());
+			log.info("✅ 강아지 전체 조회 서비스 성공 - page: {}, size: {}, totalElements: {}, resultCount: {}", 
+					page, size, dogsPage.getTotalElements(), result.size());
 
 			return result;
 		} catch (IllegalArgumentException e) {

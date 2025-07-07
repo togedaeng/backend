@@ -139,20 +139,16 @@ public class CustomService {
 
 	/**
 	 * 📍 커스텀 요청 전체 조회 서비스
-	 * - 모든 커스텀 요청을 리스트로 반환한다.
+	 * - Pageable을 받아 Page<CustomListResponseDto>로 반환한다.
 	 * - 각 요청에 대해 강아지, 소유자, 관리자, 보류, 이미지 등 부가 정보를 조합하여 DTO로 변환한다.
-	 * - 예외 발생 시 로그를 남기고 예외를 다시 throw한다.
 	 *
-	 * @return 전체 커스텀 요청 리스트 (CustomListResponseDto)
-	 * @throws IllegalArgumentException 데이터 조회 중 잘못된 인자가 있을 때
-	 * @throws Exception                기타 서버 오류 발생 시
+	 * @param pageable 페이지네이션 정보
+	 * @return 페이지네이션된 커스텀 요청 리스트 (Page<CustomListResponseDto>)
 	 */
-	public List<CustomListResponseDto> getAllCustomRequests() {
+	public Page<CustomListResponseDto> getAllCustomRequests(Pageable pageable) {
 		try {
-			List<Custom> customs = customRepository.findAll();
-			List<CustomListResponseDto> result = new ArrayList<>();
-
-			for (Custom custom : customs) {
+			Page<Custom> customsPage = customRepository.findAll(pageable);
+			return customsPage.map(custom -> {
 				// Dog 정보
 				Dog dog = dogRepository.findById(custom.getDogId()).orElse(null);
 				String dogName = (dog != null) ? dog.getName() : null;
@@ -176,7 +172,7 @@ public class CustomService {
 				Hold hold = holdRepository.findTopByCustomIdOrderByCreatedAtDesc(custom.getId());
 				LocalDateTime holdCreatedAt = (hold != null) ? hold.getCreatedAt() : null;
 
-				result.add(new CustomListResponseDto(
+				return new CustomListResponseDto(
 						custom.getId(),
 						dogName,
 						ownerNickname,
@@ -186,14 +182,14 @@ public class CustomService {
 						custom.getStartedAt(),
 						holdCreatedAt,
 						custom.getCompletedAt(),
-						custom.getCanceledAt()));
-			}
-			return result;
+						custom.getCanceledAt()
+				);
+			});
 		} catch (IllegalArgumentException e) {
-			log.warn("⚠️ 커스텀 전체 조회 실패 - {}", e.getMessage());
+			log.warn("⚠️ 커스텀 전체 조회(페이지네이션) 실패 - {}", e.getMessage());
 			throw e;
 		} catch (Exception e) {
-			log.error("❌ 커스텀 전체 조회 중 서버 오류", e);
+			log.error("❌ 커스텀 전체 조회(페이지네이션) 중 서버 오류", e);
 			throw e;
 		}
 	}
@@ -478,5 +474,9 @@ public class CustomService {
 				custom.getCanceledAt());
 
 		return responseDto;
+	}
+
+	public long countPendingCustomRequests() {
+		return customRepository.countByStatus(Status.PENDING);
 	}
 }
