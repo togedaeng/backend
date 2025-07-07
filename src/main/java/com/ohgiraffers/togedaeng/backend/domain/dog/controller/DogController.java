@@ -25,6 +25,7 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogListResponse
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogDetailResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.service.DogService;
 import com.ohgiraffers.togedaeng.backend.domain.custom.service.CustomService;
+import com.ohgiraffers.togedaeng.backend.domain.notification.service.SlackNotificationService;
 import com.ohgiraffers.togedaeng.backend.global.auth.service.JwtExtractor;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,6 +43,7 @@ public class DogController {
 	private final DogService dogService;
 	private final CustomService customService;
 	private final JwtExtractor jwtExtractor;
+	private final SlackNotificationService slackNotificationService;
 
 	/**
 	 * 📍 강아지 등록 및 커스텀 메인 이미지 업로드 API
@@ -70,6 +72,9 @@ public class DogController {
 
 			Long customId = customService.uploadMainImage(responseDto.getId(), createDogRequestDto.getMainImage());
 			log.info("📦 커스텀 메인 이미지 업로드 완료 - customId: {}", customId);
+
+			// ✅ Slack 알림 전송 (커스텀 요청 완성 후)
+			slackNotificationService.sendSlackNotification(responseDto);
 
 			return ResponseEntity.ok(customId);
 

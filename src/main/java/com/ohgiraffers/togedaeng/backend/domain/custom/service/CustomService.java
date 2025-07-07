@@ -475,4 +475,8 @@ public class CustomService {
 
 		return responseDto;
 	}
+
+	public long countPendingCustomRequests() {
+		return customRepository.countByStatus(Status.PENDING);
+	}
 }
