@@ -63,27 +63,76 @@ public class CustomService {
 	private final DogPersonalityRepository dogPersonalityRepository;
 	private final PersonalityCombinationRepository personalityCombinationRepository;
 
+	// /**
+	//  * 📍 강아지 등록 시 함께 커스텀 요청을 생성하는 메서드
+	//  * - 상태는 기본적으로 PENDING으로 저장됨
+	//  * - 메인 이미지는 필수이며, 서브 이미지는 최대 3장까지 허용
+	//  * - 업로드된 이미지는 S3에 저장되고, 각각 DogImage 엔티티로 저장됨
+	//  *
+	//  * @param dogId 등록된 강아지의 ID
+	//  * @param dto   강아지 등록 요청 DTO (이미지 포함)
+	//  * @throws IllegalArgumentException 메인 이미지가 없거나 서브 이미지가 3장을 초과할 경우
+	//  * @throws ImageUploadException     S3 업로드에 실패한 경우
+	//  */
+	// @Transactional
+	// public void createCustomRequest(Long dogId, CreateDogRequestDto dto) {
+	// 	log.info("📦 [커스텀 요청 생성] 시작 - dogId: {}", dogId);
+	//
+	// 	if (dto.getMainImage() == null) {
+	// 		throw new IllegalArgumentException("메인 이미지는 필수입니다.");
+	// 	}
+	//
+	// 	if (dto.getSubImages() != null && dto.getSubImages().size() > 3) {
+	// 		throw new IllegalArgumentException("서브 이미지는 최대 3장까지 등록 가능합니다.");
+	// 	}
+	//
+	// 	// 1. 커스텀 요청 저장
+	// 	Custom custom = new Custom(dogId, Status.PENDING, LocalDateTime.now());
+	//
+	// 	customRepository.save(custom);
+	// 	log.debug("📝 커스텀 요청 저장 완료 - customId: {}", custom.getId());
+	//
+	// 	// 2. 이미지 업로드 및 저장
+	// 	try {
+	// 		// 메인 이미지
+	// 		String mainUrl = s3Uploader.upload(dto.getMainImage(), "dog-images");
+	// 		dogImageRepository.save(new DogImage(null, custom.getId(), mainUrl, Type.MAIN));
+	// 		log.debug("📷 메인 이미지 업로드 완료 - url: {}", mainUrl);
+	//
+	// 		// 서브 이미지
+	// 		if (dto.getSubImages() != null) {
+	// 			for (MultipartFile sub : dto.getSubImages()) {
+	// 				String subUrl = s3Uploader.upload(sub, "dog-images");
+	// 				dogImageRepository.save(new DogImage(null, custom.getId(), subUrl, Type.SUB));
+	// 				log.debug("📷 서브 이미지 업로드 완료 - url: {}", subUrl);
+	// 			}
+	// 		}
+	//
+	// 	} catch (IOException e) {
+	// 		log.error("❌ 이미지 업로드 실패", e);
+	// 		throw new ImageUploadException("이미지 업로드 실패", e);
+	// 	}
+	//
+	// 	log.info("✅ [커스텀 요청 생성] 완료 - customId: {}", custom.getId());
+	// }
+
 	/**
-	 * 📍 강아지 등록 시 함께 커스텀 요청을 생성하는 메서드
+	 * 📍 강아지 등록 시 커스텀 요청의 메인 이미지를 업로드하는 메서드
 	 * - 상태는 기본적으로 PENDING으로 저장됨
-	 * - 메인 이미지는 필수이며, 서브 이미지는 최대 3장까지 허용
-	 * - 업로드된 이미지는 S3에 저장되고, 각각 DogImage 엔티티로 저장됨
+	 * - 메인 이미지는 필수이며, 업로드된 이미지는 S3에 저장되고 DogImage 엔티티로 저장
 	 *
 	 * @param dogId 등록된 강아지의 ID
-	 * @param dto   강아지 등록 요청 DTO (이미지 포함)
-	 * @throws IllegalArgumentException 메인 이미지가 없거나 서브 이미지가 3장을 초과할 경우
+	 * @param mainImage 메인 이미지 MultipartFile
+	 * @return 생성된 커스텀 요청의 ID (customId)
+	 * @throws IllegalArgumentException 메인 이미지가 없을 경우
 	 * @throws ImageUploadException     S3 업로드에 실패한 경우
 	 */
 	@Transactional
-	public void createCustomRequest(Long dogId, CreateDogRequestDto dto) {
-		log.info("📦 [커스텀 요청 생성] 시작 - dogId: {}", dogId);
+	public Long uploadMainImage(Long dogId, MultipartFile mainImage) {
+		log.info("📦 [커스텀 메인 이미지 업로드] 시작 - dogId: {}", dogId);
 
-		if (dto.getMainImage() == null) {
+		if (mainImage == null) {
 			throw new IllegalArgumentException("메인 이미지는 필수입니다.");
-		}
-
-		if (dto.getSubImages() != null && dto.getSubImages().size() > 3) {
-			throw new IllegalArgumentException("서브 이미지는 최대 3장까지 등록 가능합니다.");
 		}
 
 		// 1. 커스텀 요청 저장
@@ -92,28 +141,53 @@ public class CustomService {
 		customRepository.save(custom);
 		log.debug("📝 커스텀 요청 저장 완료 - customId: {}", custom.getId());
 
-		// 2. 이미지 업로드 및 저장
+		// 2. 메인 이미지 업로드 및 저장
 		try {
-			// 메인 이미지
-			String mainUrl = s3Uploader.upload(dto.getMainImage(), "dog-images");
+			String mainUrl = s3Uploader.upload(mainImage, "dog-images");
 			dogImageRepository.save(new DogImage(null, custom.getId(), mainUrl, Type.MAIN));
 			log.debug("📷 메인 이미지 업로드 완료 - url: {}", mainUrl);
+		} catch (IOException e) {
+			log.error("❌ 메인 이미지 업로드 실패", e);
+			throw new ImageUploadException("메인 이미지 업로드 실패", e);
+		}
 
-			// 서브 이미지
-			if (dto.getSubImages() != null) {
-				for (MultipartFile sub : dto.getSubImages()) {
+		log.info("✅ [커스텀 메인 이미지 업로드] 완료 - customId: {}", custom.getId());
+		return custom.getId();
+	}
+
+	/**
+	 * 📍 커스텀 요청의 서브 이미지를 업로드하는 메서드
+	 * - 서브 이미지는 최대 3장까지 허용
+	 * - 업로드된 이미지는 S3에 저장되고 각각 DogImage 엔티티로 저장
+	 *
+	 * @param customId 커스텀 요청 ID
+	 * @param subImages 서브 이미지 목록 (MultipartFile 리스트)
+	 * @throws IllegalArgumentException 서브 이미지가 3장을 초과할 경우
+	 * @throws ImageUploadException     S3 업로드에 실패한 경우
+	 */
+	@Transactional
+	public void uploadSubImages(Long customId, List<MultipartFile> subImages) {
+		log.info("📦 [커스텀 서브 이미지 업로드] 시작 - customId: {}", customId);
+
+		if (subImages != null && subImages.size() > 3) {
+			throw new IllegalArgumentException("서브 이미지는 최대 3장까지 등록 가능합니다.");
+		}
+
+		// 1. 서브 이미지 업로드 및 저장
+		try {
+			if (subImages != null) {
+				for (MultipartFile sub : subImages) {
 					String subUrl = s3Uploader.upload(sub, "dog-images");
-					dogImageRepository.save(new DogImage(null, custom.getId(), subUrl, Type.SUB));
+					dogImageRepository.save(new DogImage(null, customId, subUrl, Type.SUB));
 					log.debug("📷 서브 이미지 업로드 완료 - url: {}", subUrl);
 				}
 			}
-
 		} catch (IOException e) {
-			log.error("❌ 이미지 업로드 실패", e);
-			throw new ImageUploadException("이미지 업로드 실패", e);
+			log.error("❌ 서브 이미지 업로드 실패", e);
+			throw new ImageUploadException("서브 이미지 업로드 실패", e);
 		}
 
-		log.info("✅ [커스텀 요청 생성] 완료 - customId: {}", custom.getId());
+		log.info("✅ [커스텀 서브 이미지 업로드] 완료 - customId: {}", customId);
 	}
 
 	/**

@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
@@ -41,38 +43,102 @@ public class DogController {
 	private final CustomService customService;
 	private final JwtExtractor jwtExtractor;
 
+	// /**
+	//  * 📍 강아지 등록 및 커스텀 요청 생성 API
+	//  * - 사용자 인증 정보를 통해 userId 추출
+	//  * - 강아지를 등록하고, 해당 강아지 ID를 기반으로 커스텀 요청까지 함께 생성
+	//  *
+	//  * 요청 방식: multipart/form-data
+	//  * 요청 경로: POST /api/dogs/create
+	//  *
+	//  * @param createDogRequestDto 강아지 등록 요청 DTO (이미지 포함)
+	//  * @param request             HttpServletRequest (JWT 토큰에서 userId 추출용)
+	//  * @return 등록 성공 시 200 OK, 실패 시 500 서버 에러
+	//  */
+	// @PostMapping("/create")
+	// public ResponseEntity<CreateDogResponseDto> createDog(
+	// 		@ModelAttribute @Valid CreateDogRequestDto createDogRequestDto,
+	// 		HttpServletRequest request) {
+	// 	log.info("🐶 [강아지 등록] POST /api/dog/create 요청 수신");
+	//
+	// 	try {
+	// 		Long userId = jwtExtractor.extractUserId(request);
+	// 		log.debug("➡️  userId 추출 완료: {}", userId);
+	//
+	// 		CreateDogResponseDto responseDto = dogService.createDogInfo(createDogRequestDto, userId);
+	// 		log.debug("✅ 강아지 저장 완료 - dogId: {}", responseDto);
+	//
+	// 		customService.createCustomRequest(responseDto.getId(), createDogRequestDto);
+	// 		log.info("📦 커스텀 요청 생성 완료 - dogId: {}", responseDto.getId());
+	//
+	// 		return ResponseEntity.ok().build();
+	//
+	// 	} catch (Exception e) {
+	// 		log.error("❌ 강아지 등록 중 오류 발생: {}", e.getMessage(), e);
+	// 		return ResponseEntity.status(500).build();
+	// 	}
+	// }
+
 	/**
-	 * 📍 강아지 등록 및 커스텀 요청 생성 API
+	 * 📍 강아지 등록 및 커스텀 메인 이미지 업로드 API
 	 * - 사용자 인증 정보를 통해 userId 추출
-	 * - 강아지를 등록하고, 해당 강아지 ID를 기반으로 커스텀 요청까지 함께 생성
+	 * - 강아지를 등록하고, 메인 이미지와 함께 커스텀 요청 생성
 	 *
 	 * 요청 방식: multipart/form-data
-	 * 요청 경로: POST /api/dogs/create
+	 * 요청 경로: POST /api/dogs/create-main
 	 *
-	 * @param createDogRequestDto 강아지 등록 요청 DTO (이미지 포함)
+	 * @param createDogRequestDto 강아지 등록 요청 DTO (메인 이미지 포함)
 	 * @param request             HttpServletRequest (JWT 토큰에서 userId 추출용)
-	 * @return 등록 성공 시 200 OK, 실패 시 500 서버 에러
+	 * @return 생성된 커스텀 요청 ID (customId)
 	 */
 	@PostMapping("/create")
-	public ResponseEntity<CreateDogResponseDto> createDog(
-			@ModelAttribute @Valid CreateDogRequestDto createDogRequestDto,
-			HttpServletRequest request) {
-		log.info("🐶 [강아지 등록] POST /api/dog/create 요청 수신");
+	public ResponseEntity<Long> createDogMain(
+		@ModelAttribute @Valid CreateDogRequestDto createDogRequestDto,
+		HttpServletRequest request) {
+		log.info("🐶 [강아지 등록 및 메인 업로드] POST /api/dogs/create-main 요청 수신");
 
 		try {
 			Long userId = jwtExtractor.extractUserId(request);
 			log.debug("➡️  userId 추출 완료: {}", userId);
 
 			CreateDogResponseDto responseDto = dogService.createDogInfo(createDogRequestDto, userId);
-			log.debug("✅ 강아지 저장 완료 - dogId: {}", responseDto);
+			log.debug("✅ 강아지 저장 완료 - dogId: {}", responseDto.getId());
 
-			customService.createCustomRequest(responseDto.getId(), createDogRequestDto);
-			log.info("📦 커스텀 요청 생성 완료 - dogId: {}", responseDto.getId());
+			Long customId = customService.uploadMainImage(responseDto.getId(), createDogRequestDto.getMainImage());
+			log.info("📦 커스텀 메인 이미지 업로드 완료 - customId: {}", customId);
 
+			return ResponseEntity.ok(customId);
+
+		} catch (Exception e) {
+			log.error("❌ 강아지 등록 및 메인 업로드 중 오류 발생: {}", e.getMessage(), e);
+			return ResponseEntity.status(500).build();
+		}
+	}
+
+	/**
+	 * 📍 커스텀 요청의 서브 이미지 업로드 API
+	 * - 기존 생성된 커스텀 요청 ID를 통해 서브 이미지 추가 업로드
+	 *
+	 * 요청 방식: multipart/form-data
+	 * 요청 경로: POST /api/dogs/{customId}/upload-sub
+	 *
+	 * @param customId 커스텀 요청 ID
+	 * @param subImages 서브 이미지 목록 (최대 3장)
+	 * @return 업로드 성공 시 200 OK, 실패 시 500 서버 에러
+	 */
+	@PostMapping("/{customId}/sub-image")
+	public ResponseEntity<Void> uploadSubImages(
+		@PathVariable Long customId,
+		@RequestParam("subImages") List<MultipartFile> subImages) {
+		log.info("📦 [서브 이미지 업로드] POST /api/dogs/{}/upload-sub 요청 수신", customId);
+
+		try {
+			customService.uploadSubImages(customId, subImages);
+			log.info("✅ 서브 이미지 업로드 완료 - customId: {}", customId);
 			return ResponseEntity.ok().build();
 
 		} catch (Exception e) {
-			log.error("❌ 강아지 등록 중 오류 발생: {}", e.getMessage(), e);
+			log.error("❌ 서브 이미지 업로드 중 오류 발생: {}", e.getMessage(), e);
 			return ResponseEntity.status(500).build();
 		}
 	}
