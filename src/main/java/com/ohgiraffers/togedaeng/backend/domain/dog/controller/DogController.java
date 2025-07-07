@@ -43,42 +43,6 @@ public class DogController {
 	private final CustomService customService;
 	private final JwtExtractor jwtExtractor;
 
-	// /**
-	//  * 📍 강아지 등록 및 커스텀 요청 생성 API
-	//  * - 사용자 인증 정보를 통해 userId 추출
-	//  * - 강아지를 등록하고, 해당 강아지 ID를 기반으로 커스텀 요청까지 함께 생성
-	//  *
-	//  * 요청 방식: multipart/form-data
-	//  * 요청 경로: POST /api/dogs/create
-	//  *
-	//  * @param createDogRequestDto 강아지 등록 요청 DTO (이미지 포함)
-	//  * @param request             HttpServletRequest (JWT 토큰에서 userId 추출용)
-	//  * @return 등록 성공 시 200 OK, 실패 시 500 서버 에러
-	//  */
-	// @PostMapping("/create")
-	// public ResponseEntity<CreateDogResponseDto> createDog(
-	// 		@ModelAttribute @Valid CreateDogRequestDto createDogRequestDto,
-	// 		HttpServletRequest request) {
-	// 	log.info("🐶 [강아지 등록] POST /api/dog/create 요청 수신");
-	//
-	// 	try {
-	// 		Long userId = jwtExtractor.extractUserId(request);
-	// 		log.debug("➡️  userId 추출 완료: {}", userId);
-	//
-	// 		CreateDogResponseDto responseDto = dogService.createDogInfo(createDogRequestDto, userId);
-	// 		log.debug("✅ 강아지 저장 완료 - dogId: {}", responseDto);
-	//
-	// 		customService.createCustomRequest(responseDto.getId(), createDogRequestDto);
-	// 		log.info("📦 커스텀 요청 생성 완료 - dogId: {}", responseDto.getId());
-	//
-	// 		return ResponseEntity.ok().build();
-	//
-	// 	} catch (Exception e) {
-	// 		log.error("❌ 강아지 등록 중 오류 발생: {}", e.getMessage(), e);
-	// 		return ResponseEntity.status(500).build();
-	// 	}
-	// }
-
 	/**
 	 * 📍 강아지 등록 및 커스텀 메인 이미지 업로드 API
 	 * - 사용자 인증 정보를 통해 userId 추출
