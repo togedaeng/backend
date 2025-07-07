@@ -42,20 +42,28 @@ public class CustomController {
 	private final CustomService customService;
 
 	/**
-	 * 📍 커스텀 요청 전체 조회 API
-	 * - 모든 커스텀 요청을 리스트로 반환한다.
+	 * 📍 커스텀 요청 전체 조회 API (페이지네이션 적용)
+	 * - 커스텀 요청을 페이지네이션으로 조회한다. (8개씩 페이지 처리)
 	 * - 요청 방식: GET
-	 * - 요청 경로: /api/custom
+	 * - 요청 경로: /api/custom?page=0&size=8
 	 *
-	 * @return 전체 커스텀 요청 리스트 (CustomListResponseDto)
+	 * @param page 페이지 번호 (0부터 시작, 기본값: 0)
+	 * @param size 페이지당 항목 수 (기본값: 8)
+	 * @return 페이지네이션된 커스텀 요청 리스트 (Page<CustomListResponseDto>)
 	 */
 	@GetMapping
-	public ResponseEntity<List<CustomListResponseDto>> getAllCustomRequests() {
-		log.info("🔍 커스텀 전체 조회 요청");
+	public ResponseEntity<Page<CustomListResponseDto>> getAllCustomRequests(
+			@RequestParam(value = "page", defaultValue = "0") int page,
+			@RequestParam(value = "size", defaultValue = "8") int size) {
+		log.info("🔍 커스텀 전체 조회 요청 - page: {}, size: {}", page, size);
 
 		try {
-			List<CustomListResponseDto> result = customService.getAllCustomRequests();
-			log.info("✅ 커스텀 전체 조회 성공 - count: {}", result.size());
+			// 페이지네이션 객체 생성 (최신 등록순으로 정렬)
+			Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+			Page<CustomListResponseDto> result = customService.getAllCustomRequests(pageable);
+			
+			log.info("✅ 커스텀 전체 조회 성공 - page: {}, size: {}, totalElements: {}, totalPages: {}", 
+					page, size, result.getTotalElements(), result.getTotalPages());
 			return ResponseEntity.ok(result);
 		} catch (IllegalArgumentException e) {
 			log.warn("⚠️ 커스텀 전체 조회 실패 - {}", e.getMessage());

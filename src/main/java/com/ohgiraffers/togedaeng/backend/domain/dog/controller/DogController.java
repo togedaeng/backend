@@ -108,20 +108,25 @@ public class DogController {
 	}
 
 	/**
-	 * 📍 강아지 전체 조회 API
-	 * - 모든 강아지 정보를 리스트로 반환한다.
+	 * 📍 강아지 전체 조회 API (페이지네이션)
+	 * - 모든 강아지 정보를 페이지네이션으로 반환한다.
+	 * - 기본 페이지 크기는 8개이며, 사용자가 지정할 수 있다.
 	 *
 	 * - 요청 방식: GET
 	 * - 요청 경로: /api/dog
 	 *
-	 * @return 전체 강아지 리스트 (DogListResponseDto)
+	 * @param page 페이지 번호 (기본값: 0)
+	 * @param size 페이지 크기 (기본값: 8)
+	 * @return 페이지네이션된 강아지 리스트 (DogListResponseDto)
 	 */
 	@GetMapping
-	public ResponseEntity<List<DogListResponseDto>> getAllDogs() {
-		log.info("🔍 강아지 전체 조회 요청");
+	public ResponseEntity<List<DogListResponseDto>> getAllDogs(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "8") int size) {
+		log.info("🔍 강아지 전체 조회 요청 - page: {}, size: {}", page, size);
 
 		try {
-			List<DogListResponseDto> result = dogService.getAllDogs();
+			List<DogListResponseDto> result = dogService.getAllDogs(page, size);
 			log.info("✅ 강아지 전체 조회 성공 - count: {}", result.size());
 			return ResponseEntity.ok(result);
 		} catch (IllegalArgumentException e) {
