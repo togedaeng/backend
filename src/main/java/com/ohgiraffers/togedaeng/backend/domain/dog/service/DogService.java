@@ -60,61 +60,46 @@ public class DogService {
 
 		log.info("🐶 [강아지 등록] 시작 - userId: {}", userId);
 
-		// 1. 강아지 엔티티 저장
-		Dog dog = dogRepository.save(
-				Dog.builder()
-						.name(dto.getName())
-						.gender(dto.getGender())
-						.birth(dto.getBirth())
-						.status(Status.REGISTERED)
-						.createdAt(LocalDateTime.now())
-						.build());
+		// 1. Dog 엔티티 먼저 생성 (personalityCombination 없이)
+		Dog dog = Dog.builder()
+			.name(dto.getName())
+			.gender(dto.getGender())
+			.birth(dto.getBirth())
+			.status(Status.REGISTERED)
+			.createdAt(LocalDateTime.now())
+			.build();
+
+		dogRepository.save(dog);
 		log.debug("📌 강아지 저장 완료 - dogId: {}", dog.getId());
 
-		// 2. 성격 조합 처리
-		Long p1 = dto.getPersonalityId1();
-		Long p2 = dto.getPersonalityId2();
+		// 2. PersonalityCombination 생성 및 dog에 세팅
+		PersonalityCombination combination = PersonalityCombination.builder()
+			.dog(dog) // 연관관계 주인 설정
+			.personalityId1(dto.getPersonalityId1())
+			.personalityId2(dto.getPersonalityId2())
+			.build();
 
-		if (p1 == null) {
-			throw new IllegalArgumentException("성격 하나는 반드시 선택해야 합니다.");
-		}
+		personalityCombinationRepository.save(combination);
 
-		if (p2 != null && p1.equals(p2)) {
-			p2 = null; // 중복 제거
-		}
+		// 3. 양방향 관계 세팅
+		dog.setPersonalityCombination(combination);
 
-		Long first = (p2 == null || p1 < p2) ? p1 : p2;
-		Long second = (p2 == null || p1 < p2) ? p2 : p1;
-
-		PersonalityCombination combination = personalityCombinationRepository
-			.findByDogIdAndPersonalityId1AndPersonalityId2(dog.getId(), first, second)
-			.orElseGet(() -> {
-				PersonalityCombination newCombo = new PersonalityCombination();
-				newCombo.setDogId(dog.getId());
-				newCombo.setPersonalityId1(first);
-				newCombo.setPersonalityId2(second);
-				return personalityCombinationRepository.save(newCombo);
-			});
-		log.debug("🧠 성격 조합 저장 완료 - dogId: {}, p1: {}, p2: {}", dog.getId(), first, second);
-
-		// 3. DogOwner 저장
+		// 4. DogOwner 저장 (userId 관리)
 		DogOwner owner = new DogOwner(userId, dog.getId(), dto.getCallName(), LocalDateTime.now());
 		dogOwnerRepository.save(owner);
 
-		log.debug("👤 DogOwner 저장 완료 - userId: {}, dogId: {}", userId, dog.getId());
+		// 5. 응답 DTO 생성 및 반환
+		CreateDogResponseDto responseDto = new CreateDogResponseDto(
+			dog.getId(),
+			userId,
+			combination.getId(),
+			dog.getName(),
+			dog.getGender(),
+			dog.getBirth(),
+			dto.getCallName(),
+			dog.getCreatedAt());
 
 		log.info("✅ [강아지 등록] 완료 - dogId: {}", dog.getId());
-
-		// 4. ResponseDto 생성
-		CreateDogResponseDto responseDto = new CreateDogResponseDto(
-				dog.getId(),
-				userId,
-				combination.getId(),
-				dog.getName(),
-				dog.getGender(),
-				dog.getBirth(),
-				dto.getCallName(),
-				dog.getCreatedAt());
 
 		return responseDto;
 	}
