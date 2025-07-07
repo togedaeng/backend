@@ -87,17 +87,14 @@ public class DogService {
 		Long second = (p2 == null || p1 < p2) ? p2 : p1;
 
 		PersonalityCombination combination = personalityCombinationRepository
-				.findByDogIdAndPersonalityId1AndPersonalityId2(dog.getId(), first, second)
-				.orElseGet(() -> {
-					PersonalityCombination newCombo = new PersonalityCombination();
-					newCombo.setDogId(dog.getId());
-					newCombo.setPersonalityId1(first);
-					newCombo.setPersonalityId2(second);
-					return personalityCombinationRepository.save(newCombo);
-				});
-
-		combination.setDogId(dog.getId());
-		personalityCombinationRepository.save(combination);
+			.findByDogIdAndPersonalityId1AndPersonalityId2(dog.getId(), first, second)
+			.orElseGet(() -> {
+				PersonalityCombination newCombo = new PersonalityCombination();
+				newCombo.setDogId(dog.getId());
+				newCombo.setPersonalityId1(first);
+				newCombo.setPersonalityId2(second);
+				return personalityCombinationRepository.save(newCombo);
+			});
 		log.debug("🧠 성격 조합 저장 완료 - dogId: {}, p1: {}, p2: {}", dog.getId(), first, second);
 
 		// 3. DogOwner 저장
