@@ -45,12 +45,12 @@ public class UserService {
 		if (userRepository.findByProviderAndProviderId(dto.getProvider(), dto.getProviderId()).isPresent()) {
 			throw new IllegalArgumentException("이미 가입된 회원입니다.");
 		}
-		
+
 		// 2. 닉네임 중복 확인
 		if (userRepository.existsByNickname(dto.getNickname())) {
 			throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
 		}
-		
+
 		try {
 			User user = User.builder()
 				.nickname(dto.getNickname())
@@ -73,8 +73,11 @@ public class UserService {
 				savedUser.getBirth(),
 				savedUser.getEmail(),
 				savedUser.getProvider(),
+				savedUser.getRole(),
 				savedUser.getStatus(),
-				savedUser.getCreatedAt()
+				savedUser.getCreatedAt(),
+				savedUser.getUpdatedAt(),
+				savedUser.getDeletedAt()
 			);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -98,8 +101,11 @@ public class UserService {
 				user.getBirth(),
 				user.getEmail(),
 				user.getProvider(),
+				user.getRole(),
 				user.getStatus(),
-				user.getCreatedAt()
+				user.getCreatedAt(),
+				user.getUpdatedAt(),
+				user.getDeletedAt()
 			));
 		}
 
@@ -128,8 +134,11 @@ public class UserService {
 			user.getBirth(),
 			user.getEmail(),
 			user.getProvider(),
+			user.getRole(),
 			user.getStatus(),
-			user.getCreatedAt()
+			user.getCreatedAt(),
+			user.getUpdatedAt(),
+			user.getDeletedAt()
 		);
 	}
 
@@ -158,8 +167,11 @@ public class UserService {
 			updatedUser.getBirth(),
 			updatedUser.getEmail(),
 			updatedUser.getProvider(),
+			updatedUser.getRole(),
 			updatedUser.getStatus(),
-			updatedUser.getCreatedAt()
+			updatedUser.getCreatedAt(),
+			updatedUser.getUpdatedAt(),
+			updatedUser.getDeletedAt()
 		);
 	}
 

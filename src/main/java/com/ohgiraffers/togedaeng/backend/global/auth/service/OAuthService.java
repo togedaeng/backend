@@ -22,20 +22,29 @@ public class OAuthService {
 	private final UserService userService;
 	private final JwtProvider jwtProvider;
 	private final UserRepository userRepository;
+	private final GoogleOAuthClient googleOAuthClient;
+	private final NaverOAuthClient naverOAuthClient;
 
 	@Autowired
 	public OAuthService(Map<String, OAuthClient> oauthClients, UserService userService, JwtProvider jwtProvider,
-		UserRepository userRepository) {
+		UserRepository userRepository, GoogleOAuthClient googleOAuthClient, NaverOAuthClient naverOAuthClient) {
 		this.oauthClients = oauthClients;
 		this.userService = userService;
 		this.jwtProvider = jwtProvider;
 		this.userRepository = userRepository;
+		this.googleOAuthClient = googleOAuthClient;
+		this.naverOAuthClient = naverOAuthClient;
 	}
 
 	// 소셜로그인 시도한 클라이언트의 플랫폼, 코드, uri 가져옴
 	public OAuthUserInfo getUserInfo(String provider, String code, String redirectUri) {
-		OAuthClient client = oauthClients.get(provider.toLowerCase());
-		return client.getUserInfo(code, redirectUri);
+		if ("google".equalsIgnoreCase(provider)) {
+			return googleOAuthClient.getUserInfo(code, redirectUri);
+		} else if ("naver".equalsIgnoreCase(provider)) {
+			return naverOAuthClient.getUserInfo(code, redirectUri);
+		} else {
+			throw new IllegalArgumentException("지원하지 않는 provider: " + provider);
+		}
 	}
 
 	// 기존회원인지 확인

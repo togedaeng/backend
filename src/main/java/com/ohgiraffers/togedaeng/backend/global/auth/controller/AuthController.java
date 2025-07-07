@@ -19,14 +19,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserInfoRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.User;
-import com.ohgiraffers.togedaeng.backend.global.auth.dto.AuthorizationCodeRequest;
+import com.ohgiraffers.togedaeng.backend.domain.user.repository.UserRepository;
 import com.ohgiraffers.togedaeng.backend.global.auth.dto.AuthResponseDto;
+import com.ohgiraffers.togedaeng.backend.global.auth.dto.AuthorizationCodeRequest;
 import com.ohgiraffers.togedaeng.backend.global.auth.dto.OAuthUserInfo;
 import com.ohgiraffers.togedaeng.backend.global.auth.dto.RefreshTokenRequest;
 import com.ohgiraffers.togedaeng.backend.global.auth.dto.TokenResponseDto;
-import com.ohgiraffers.togedaeng.backend.global.auth.service.OAuthService;
 import com.ohgiraffers.togedaeng.backend.global.auth.service.JwtProvider;
-import com.ohgiraffers.togedaeng.backend.domain.user.repository.UserRepository;
+import com.ohgiraffers.togedaeng.backend.global.auth.service.OAuthService;
 
 // 프론트에서 로그인 후 받은 인가토큰을 넘겨받음
 @RestController
@@ -37,7 +37,7 @@ public class AuthController {
 	private final OAuthService oAuthService;
 	private final JwtProvider jwtProvider;
 	private final UserRepository userRepository;
-	
+
 	@Value("${frontend.url}")
 	private String frontendUrl;
 
@@ -55,15 +55,15 @@ public class AuthController {
 	 * 3. 기존 회원이면 JWT 발급, 신규 회원이면 추가 정보 요청
 	 */
 	@PostMapping("/oauth/{provider}")
-	public ResponseEntity<?> socialLogin(@PathVariable("provider") String provider, 
+	public ResponseEntity<?> socialLogin(@PathVariable("provider") String provider,
 		@RequestBody AuthorizationCodeRequest request) {
 
-		log.info("OAuth login request - provider: {}, code: {}", provider, request.getCode());
+		log.info("OAuth 로그인 요청 - 플랫폼: {}, code: {}", provider, request.getCode());
 
 		try {
 			// 1. authorization code로 사용자 정보 가져오기
 			OAuthUserInfo userInfo = oAuthService.getUserInfo(provider, request.getCode(), request.getRedirectUri());
-			
+
 			// 2. 기존 회원인지 확인
 			boolean isRegistered = oAuthService.isUserRegistered(userInfo.getProviderId(), provider);
 
@@ -92,12 +92,12 @@ public class AuthController {
 	@GetMapping("/nickname/check")
 	public ResponseEntity<Map<String, Boolean>> checkNickname(@RequestParam String nickname) {
 		log.info("Check nickname availability: {}", nickname);
-		
+
 		try {
 			boolean isAvailable = !userRepository.existsByNickname(nickname);
 			Map<String, Boolean> response = new HashMap<>();
 			response.put("isAvailable", isAvailable); // true: 사용 가능, false: 사용 불가능
-			
+
 			log.info("Nickname '{}' availability: {}", nickname, isAvailable);
 			return ResponseEntity.ok(response);
 		} catch (Exception e) {
@@ -114,19 +114,19 @@ public class AuthController {
 	@PostMapping("/create")
 	public ResponseEntity<AuthResponseDto> createUser(@RequestBody UserInfoRequestDto userInfoRequestDto) {
 		log.info("Create user request: {}", userInfoRequestDto);
-		
+
 		try {
 			TokenResponseDto token = oAuthService.createUser(userInfoRequestDto);
-			
+
 			// 생성된 사용자 정보 조회
 			User user = userRepository.findByProviderAndProviderId(
-				userInfoRequestDto.getProvider(), 
+				userInfoRequestDto.getProvider(),
 				userInfoRequestDto.getProviderId()
 			).orElseThrow(() -> new RuntimeException("회원 생성 후 조회 실패"));
-			
+
 			AuthResponseDto response = new AuthResponseDto(user, token);
 			log.info("User created successfully - userId: {}", user.getId());
-			
+
 			return new ResponseEntity<>(response, HttpStatus.CREATED);
 		} catch (Exception e) {
 			log.error("User creation error", e);
@@ -142,19 +142,19 @@ public class AuthController {
 	@PostMapping("/refresh")
 	public ResponseEntity<TokenResponseDto> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
 		log.info("Token refresh request");
-		
+
 		try {
 			String refreshToken = refreshTokenRequest.getRefreshToken();
-			
+
 			// refresh token에서 사용자 정보 추출
 			Long userId = jwtProvider.getUserId(refreshToken);
 			User user = userRepository.findById(userId)
 				.orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-			
+
 			// 새로운 access token 발급
 			String newAccessToken = jwtProvider.reissueAccessToken(refreshToken, user);
 			TokenResponseDto tokenResponse = new TokenResponseDto(newAccessToken, refreshToken);
-			
+
 			return ResponseEntity.ok(tokenResponse);
 		} catch (Exception e) {
 			log.error("Token refresh error", e);
