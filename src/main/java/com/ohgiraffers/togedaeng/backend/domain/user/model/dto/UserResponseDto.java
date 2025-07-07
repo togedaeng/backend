@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
+import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.Role;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.UserStatus;
 
 import lombok.AllArgsConstructor;
@@ -24,6 +25,9 @@ public class UserResponseDto {
 	private LocalDate birth;
 	private String email;
 	private String provider;
+	private Role role;
 	private UserStatus status;
 	private LocalDateTime createdAt;
+	private LocalDateTime updatedAt;
+	private LocalDateTime deletedAt;
 }

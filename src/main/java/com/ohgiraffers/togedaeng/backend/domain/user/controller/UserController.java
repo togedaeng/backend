@@ -48,28 +48,28 @@ public class UserController {
 	@GetMapping("/me")
 	public ResponseEntity<UserResponseDto> getCurrentUser(HttpServletRequest request) {
 		log.info("GET /user/me request received");
-		
+
 		try {
 			// Authorization 헤더에서 Bearer 토큰 추출
 			String authHeader = request.getHeader("Authorization");
 			log.info("Authorization header: {}", authHeader);
-			
+
 			if (authHeader == null || !authHeader.startsWith("Bearer ")) {
 				log.warn("Invalid or missing Authorization header");
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 			}
-			
+
 			String token = authHeader.substring(7); // "Bearer " 제거
 			log.info("Extracted token: {}", token.substring(0, Math.min(token.length(), 20)) + "...");
-			
+
 			// JWT 토큰에서 사용자 ID 추출
 			Long userId = jwtProvider.getUserId(token);
 			log.info("Extracted userId: {}", userId);
-			
+
 			// 사용자 정보 조회
 			User user = userRepository.findById(userId)
 				.orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-			
+
 			UserResponseDto userResponse = new UserResponseDto(
 				user.getId(),
 				user.getNickname(),
@@ -77,13 +77,16 @@ public class UserController {
 				user.getBirth(),
 				user.getEmail(),
 				user.getProvider(),
+				user.getRole(),
 				user.getStatus(),
-				user.getCreatedAt()
+				user.getCreatedAt(),
+				user.getUpdatedAt(),
+				user.getDeletedAt()
 			);
-			
+
 			log.info("Current user info retrieved - userId: {}", userId);
 			return ResponseEntity.ok(userResponse);
-			
+
 		} catch (Exception e) {
 			log.error("Error getting current user", e);
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
