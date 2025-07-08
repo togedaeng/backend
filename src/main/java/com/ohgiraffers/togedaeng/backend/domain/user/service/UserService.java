@@ -192,13 +192,13 @@ public class UserService {
 
 		// 유효성 검증: 이미 INACTIVE 상태인지 확인
 		// 이미 INACTIVE 일 때는 삭제 못하게 하고, 그래도 같은 요청이 들어왔을시에는 익셉션처리를 해줘야 함
-		if (user.getStatus() == UserStatus.DELETED || user.getStatus() == UserStatus.BLOCKED) {
+		if (user.getStatus() == UserStatus.WITHDRAWN || user.getStatus() == UserStatus.SUSPENDED) {
 			throw new IllegalArgumentException("이미 비활성화 된 회원입니다.");
 		}
 
 		log.info("탈퇴/차단된 사용자: {}", id);
 
-		user.setStatus(UserStatus.DELETED);
+		user.setStatus(UserStatus.WITHDRAWN);
 		user.setDeletedAt(LocalDateTime.now());
 
 		User updatedUser = userRepository.save(user);
