@@ -6,15 +6,20 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogDetailResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
+import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogOwnerRepository;
 import com.ohgiraffers.togedaeng.backend.domain.dog.repository.DogRepository;
+import com.ohgiraffers.togedaeng.backend.domain.dog.service.DogService;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.DeleteUserResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserInfoRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserNicknameUpdateDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserWithDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.User;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.UserStatus;
 import com.ohgiraffers.togedaeng.backend.domain.user.repository.UserRepository;
@@ -28,10 +33,17 @@ public class UserService {
 
 	private final UserRepository userRepository;
 	private final DogRepository dogRepository;
+	private final DogOwnerRepository dogOwnerRepository;
+	private final DogService dogService;
 
-	public UserService(UserRepository userRepository, DogRepository dogRepository) {
+	@Autowired
+	public UserService(UserRepository userRepository, DogRepository dogRepository,
+		DogOwnerRepository dogOwnerRepository,
+		DogService dogService) {
 		this.userRepository = userRepository;
 		this.dogRepository = dogRepository;
+		this.dogOwnerRepository = dogOwnerRepository;
+		this.dogService = dogService;
 	}
 
 	/**
@@ -115,11 +127,11 @@ public class UserService {
 	}
 
 	/**
-	 * 📍 회원 단일 조회(관리자용)
+	 * 📍 회원 상세 조회(관리자용)
 	 * @param id 회원 id
 	 * @return 회원 정보 DTO 변환
 	 */
-	public UserResponseDto getUserById(Long id) {
+	public UserWithDogResponseDto getUserWithDogById(Long id) {
 		User user = userRepository.findById(id).orElse(null);
 		log.info("조회할 사용자 ID: {}", id);
 
@@ -127,7 +139,15 @@ public class UserService {
 			return null;
 		}
 
-		return new UserResponseDto(
+		System.out.println("테스트");
+
+		Long dogId = dogOwnerRepository.findDogIdByUserId(user.getId()); // userId로 dogId를 가져옴
+
+		System.out.println("dogId : " + dogId);
+
+		DogDetailResponseDto dogDetailResponseDto = (dogId != null) ? dogService.getDogById(dogId) : null;
+
+		UserResponseDto userResponseDto = new UserResponseDto(
 			user.getId(),
 			user.getNickname(),
 			user.getGender(),
@@ -140,6 +160,8 @@ public class UserService {
 			user.getUpdatedAt(),
 			user.getDeletedAt()
 		);
+
+		return new UserWithDogResponseDto(userResponseDto, dogDetailResponseDto);
 	}
 
 	/**

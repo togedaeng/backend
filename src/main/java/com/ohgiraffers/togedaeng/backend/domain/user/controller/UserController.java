@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.DeleteUserResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserNicknameUpdateDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserWithDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.User;
 import com.ohgiraffers.togedaeng.backend.domain.user.repository.UserRepository;
 import com.ohgiraffers.togedaeng.backend.domain.user.service.UserService;
@@ -105,15 +106,15 @@ public class UserController {
 	}
 
 	/**
-	 * 📍 회원 단일 조회
+	 * 📍 회원 상세 조회
 	 * @param id 회원 id
 	 * @return 회원 정보
 	 */
 	@GetMapping("/{id}")
-	public ResponseEntity<UserResponseDto> getUserById(@PathVariable("id") Long id) {
+	public ResponseEntity<UserWithDogResponseDto> getUserById(@PathVariable("id") Long id) {
 		log.info("Get user by id: {}", id);
-		UserResponseDto user = userService.getUserById(id);
-		return new ResponseEntity<>(user, HttpStatus.OK);
+		UserWithDogResponseDto userWithDog = userService.getUserWithDogById(id);
+		return ResponseEntity.ok(userWithDog);
 	}
 
 	/**
