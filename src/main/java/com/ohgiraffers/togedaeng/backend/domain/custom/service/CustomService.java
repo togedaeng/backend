@@ -64,26 +64,22 @@ public class CustomService {
 	private final PersonalityCombinationRepository personalityCombinationRepository;
 
 	/**
-	 * 📍 강아지 등록 시 함께 커스텀 요청을 생성하는 메서드
+	 * 📍 강아지 등록 시 커스텀 요청의 메인 이미지를 업로드하는 메서드
 	 * - 상태는 기본적으로 PENDING으로 저장됨
-	 * - 메인 이미지는 필수이며, 서브 이미지는 최대 3장까지 허용
-	 * - 업로드된 이미지는 S3에 저장되고, 각각 DogImage 엔티티로 저장됨
+	 * - 메인 이미지는 필수이며, 업로드된 이미지는 S3에 저장되고 DogImage 엔티티로 저장
 	 *
 	 * @param dogId 등록된 강아지의 ID
-	 * @param dto   강아지 등록 요청 DTO (이미지 포함)
-	 * @throws IllegalArgumentException 메인 이미지가 없거나 서브 이미지가 3장을 초과할 경우
+	 * @param mainImage 메인 이미지 MultipartFile
+	 * @return 생성된 커스텀 요청의 ID (customId)
+	 * @throws IllegalArgumentException 메인 이미지가 없을 경우
 	 * @throws ImageUploadException     S3 업로드에 실패한 경우
 	 */
 	@Transactional
-	public void createCustomRequest(Long dogId, CreateDogRequestDto dto) {
-		log.info("📦 [커스텀 요청 생성] 시작 - dogId: {}", dogId);
+	public Long uploadMainImage(Long dogId, MultipartFile mainImage) {
+		log.info("📦 [커스텀 메인 이미지 업로드] 시작 - dogId: {}", dogId);
 
-		if (dto.getMainImage() == null) {
+		if (mainImage == null) {
 			throw new IllegalArgumentException("메인 이미지는 필수입니다.");
-		}
-
-		if (dto.getSubImages() != null && dto.getSubImages().size() > 3) {
-			throw new IllegalArgumentException("서브 이미지는 최대 3장까지 등록 가능합니다.");
 		}
 
 		// 1. 커스텀 요청 저장
@@ -92,46 +88,67 @@ public class CustomService {
 		customRepository.save(custom);
 		log.debug("📝 커스텀 요청 저장 완료 - customId: {}", custom.getId());
 
-		// 2. 이미지 업로드 및 저장
+		// 2. 메인 이미지 업로드 및 저장
 		try {
-			// 메인 이미지
-			String mainUrl = s3Uploader.upload(dto.getMainImage(), "dog-images");
+			String mainUrl = s3Uploader.upload(mainImage, "dog-images");
 			dogImageRepository.save(new DogImage(null, custom.getId(), mainUrl, Type.MAIN));
 			log.debug("📷 메인 이미지 업로드 완료 - url: {}", mainUrl);
+		} catch (IOException e) {
+			log.error("❌ 메인 이미지 업로드 실패", e);
+			throw new ImageUploadException("메인 이미지 업로드 실패", e);
+		}
 
-			// 서브 이미지
-			if (dto.getSubImages() != null) {
-				for (MultipartFile sub : dto.getSubImages()) {
+		log.info("✅ [커스텀 메인 이미지 업로드] 완료 - customId: {}", custom.getId());
+		return custom.getId();
+	}
+
+	/**
+	 * 📍 커스텀 요청의 서브 이미지를 업로드하는 메서드
+	 * - 서브 이미지는 최대 3장까지 허용
+	 * - 업로드된 이미지는 S3에 저장되고 각각 DogImage 엔티티로 저장
+	 *
+	 * @param customId 커스텀 요청 ID
+	 * @param subImages 서브 이미지 목록 (MultipartFile 리스트)
+	 * @throws IllegalArgumentException 서브 이미지가 3장을 초과할 경우
+	 * @throws ImageUploadException     S3 업로드에 실패한 경우
+	 */
+	@Transactional
+	public void uploadSubImages(Long customId, List<MultipartFile> subImages) {
+		log.info("📦 [커스텀 서브 이미지 업로드] 시작 - customId: {}", customId);
+
+		if (subImages != null && subImages.size() > 3) {
+			throw new IllegalArgumentException("서브 이미지는 최대 3장까지 등록 가능합니다.");
+		}
+
+		// 1. 서브 이미지 업로드 및 저장
+		try {
+			if (subImages != null) {
+				for (MultipartFile sub : subImages) {
 					String subUrl = s3Uploader.upload(sub, "dog-images");
-					dogImageRepository.save(new DogImage(null, custom.getId(), subUrl, Type.SUB));
+					dogImageRepository.save(new DogImage(null, customId, subUrl, Type.SUB));
 					log.debug("📷 서브 이미지 업로드 완료 - url: {}", subUrl);
 				}
 			}
-
 		} catch (IOException e) {
-			log.error("❌ 이미지 업로드 실패", e);
-			throw new ImageUploadException("이미지 업로드 실패", e);
+			log.error("❌ 서브 이미지 업로드 실패", e);
+			throw new ImageUploadException("서브 이미지 업로드 실패", e);
 		}
 
-		log.info("✅ [커스텀 요청 생성] 완료 - customId: {}", custom.getId());
+		log.info("✅ [커스텀 서브 이미지 업로드] 완료 - customId: {}", customId);
 	}
 
 	/**
 	 * 📍 커스텀 요청 전체 조회 서비스
-	 * - 모든 커스텀 요청을 리스트로 반환한다.
+	 * - Pageable을 받아 Page<CustomListResponseDto>로 반환한다.
 	 * - 각 요청에 대해 강아지, 소유자, 관리자, 보류, 이미지 등 부가 정보를 조합하여 DTO로 변환한다.
-	 * - 예외 발생 시 로그를 남기고 예외를 다시 throw한다.
 	 *
-	 * @return 전체 커스텀 요청 리스트 (CustomListResponseDto)
-	 * @throws IllegalArgumentException 데이터 조회 중 잘못된 인자가 있을 때
-	 * @throws Exception                기타 서버 오류 발생 시
+	 * @param pageable 페이지네이션 정보
+	 * @return 페이지네이션된 커스텀 요청 리스트 (Page<CustomListResponseDto>)
 	 */
-	public List<CustomListResponseDto> getAllCustomRequests() {
+	public Page<CustomListResponseDto> getAllCustomRequests(Pageable pageable) {
 		try {
-			List<Custom> customs = customRepository.findAll();
-			List<CustomListResponseDto> result = new ArrayList<>();
-
-			for (Custom custom : customs) {
+			Page<Custom> customsPage = customRepository.findAll(pageable);
+			return customsPage.map(custom -> {
 				// Dog 정보
 				Dog dog = dogRepository.findById(custom.getDogId()).orElse(null);
 				String dogName = (dog != null) ? dog.getName() : null;
@@ -155,7 +172,7 @@ public class CustomService {
 				Hold hold = holdRepository.findTopByCustomIdOrderByCreatedAtDesc(custom.getId());
 				LocalDateTime holdCreatedAt = (hold != null) ? hold.getCreatedAt() : null;
 
-				result.add(new CustomListResponseDto(
+				return new CustomListResponseDto(
 						custom.getId(),
 						dogName,
 						ownerNickname,
@@ -165,14 +182,14 @@ public class CustomService {
 						custom.getStartedAt(),
 						holdCreatedAt,
 						custom.getCompletedAt(),
-						custom.getCanceledAt()));
-			}
-			return result;
+						custom.getCanceledAt()
+				);
+			});
 		} catch (IllegalArgumentException e) {
-			log.warn("⚠️ 커스텀 전체 조회 실패 - {}", e.getMessage());
+			log.warn("⚠️ 커스텀 전체 조회(페이지네이션) 실패 - {}", e.getMessage());
 			throw e;
 		} catch (Exception e) {
-			log.error("❌ 커스텀 전체 조회 중 서버 오류", e);
+			log.error("❌ 커스텀 전체 조회(페이지네이션) 중 서버 오류", e);
 			throw e;
 		}
 	}
@@ -457,5 +474,9 @@ public class CustomService {
 				custom.getCanceledAt());
 
 		return responseDto;
+	}
+
+	public long countPendingCustomRequests() {
+		return customRepository.countByStatus(Status.PENDING);
 	}
 }
