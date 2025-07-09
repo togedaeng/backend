@@ -144,10 +144,9 @@ public class CustomService {
 
 			return customs.stream()
 				.map(custom -> {
-					List<Hold> holds = holdRepository.findByCustomId(custom.getId());
-					List<HoldSimpleDto> holdDtos = holds.stream()
-						.map(hold -> new HoldSimpleDto(hold.getId(), hold.getCreatedAt()))
-						.toList();
+					Hold hold = holdRepository.findTopByCustomIdOrderByCreatedAtDesc(custom.getId());
+					HoldSimpleDto holdDto =
+						(hold != null) ? new HoldSimpleDto(hold.getId(), hold.getCreatedAt()) : null;
 
 					return new CustomListByDogIdResponseDto(
 						custom.getId(),
@@ -157,7 +156,7 @@ public class CustomService {
 						custom.getStartedAt(),
 						custom.getCompletedAt(),
 						custom.getCanceledAt(),
-						holdDtos
+						holdDto
 					);
 				})
 				.toList();
