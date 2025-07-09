@@ -1,5 +1,7 @@
 package com.ohgiraffers.togedaeng.backend.domain.custom.controller;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -16,21 +18,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCanceledRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCompletedRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusHoldRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusInProgressRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.CustomDetailResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.CustomListByDogIdResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.CustomListResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusCompletedResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusHoldResponseDto;
-import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Status;
-import com.ohgiraffers.togedaeng.backend.domain.dog.controller.DogController;
-import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCanceledRequestDto;
-import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusInProgressRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusInProgressResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.service.CustomService;
-import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.CustomDetailResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.controller.DogController;
 
 import lombok.RequiredArgsConstructor;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/custom")
@@ -53,17 +54,17 @@ public class CustomController {
 	 */
 	@GetMapping
 	public ResponseEntity<Page<CustomListResponseDto>> getAllCustomRequests(
-			@RequestParam(value = "page", defaultValue = "0") int page,
-			@RequestParam(value = "size", defaultValue = "8") int size) {
+		@RequestParam(value = "page", defaultValue = "0") int page,
+		@RequestParam(value = "size", defaultValue = "8") int size) {
 		log.info("🔍 커스텀 전체 조회 요청 - page: {}, size: {}", page, size);
 
 		try {
 			// 페이지네이션 객체 생성 (최신 등록순으로 정렬)
 			Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 			Page<CustomListResponseDto> result = customService.getAllCustomRequests(pageable);
-			
-			log.info("✅ 커스텀 전체 조회 성공 - page: {}, size: {}, totalElements: {}, totalPages: {}", 
-					page, size, result.getTotalElements(), result.getTotalPages());
+
+			log.info("✅ 커스텀 전체 조회 성공 - page: {}, size: {}, totalElements: {}, totalPages: {}",
+				page, size, result.getTotalElements(), result.getTotalPages());
 			return ResponseEntity.ok(result);
 		} catch (IllegalArgumentException e) {
 			log.warn("⚠️ 커스텀 전체 조회 실패 - {}", e.getMessage());
@@ -73,7 +74,6 @@ public class CustomController {
 			return ResponseEntity.status(500).build();
 		}
 	}
-
 
 	/**
 	 * 📍 커스텀 요청 단일 상세 조회 API
@@ -101,6 +101,24 @@ public class CustomController {
 		}
 	}
 
+	// 반려견 id별 커스텀 요청 목록 전체 조회
+	@GetMapping("/list/{dogId}")
+	public ResponseEntity<List<CustomListByDogIdResponseDto>> getCustomRequestsByDogId(
+		@PathVariable("dogId") Long dogId) {
+		log.info("DogId 별 커스텀 요청 목록 전체 조회 요청 - dogId: {}", dogId);
+
+		try {
+			List<CustomListByDogIdResponseDto> customListByDogIdResponseDtos = customService.getAllCustomRequestsByDogId(
+				dogId);
+			return ResponseEntity.ok(customListByDogIdResponseDtos);
+		} catch (IllegalArgumentException e) {
+			log.warn("⚠️ 커스텀 전체 조회 실패 - {}", e.getMessage());
+			return ResponseEntity.badRequest().build();
+		} catch (Exception e) {
+			log.error("❌ 커스텀 전체 조회 중 서버 오류", e);
+			return ResponseEntity.status(500).build();
+		}
+	}
 
 	/**
 	 * 📍 커스텀 요청 상태를 '진행중(IN_PROGRESS)'으로 변경하는 API
@@ -117,8 +135,8 @@ public class CustomController {
 	 */
 	@PutMapping("/{id}/in-progress")
 	public ResponseEntity<UpdateCustomStatusInProgressResponseDto> updateCustomStatusInProgress(
-			@PathVariable("id") Long customId,
-			@RequestBody UpdateCustomStatusInProgressRequestDto dto) {
+		@PathVariable("id") Long customId,
+		@RequestBody UpdateCustomStatusInProgressRequestDto dto) {
 		log.info("🔄 커스텀 요청 진행중 상태 변경 요청 - customId: {}, adminId: {}", customId, dto.getAdminId());
 
 		try {
@@ -133,7 +151,6 @@ public class CustomController {
 			return ResponseEntity.status(500).build();
 		}
 	}
-
 
 	/**
 	 * 📍 커스텀 요청 상태를 '보류(HOLD)'로 변경하는 API
@@ -153,10 +170,10 @@ public class CustomController {
 	 */
 	@PutMapping("/{id}/hold")
 	public ResponseEntity<UpdateCustomStatusHoldResponseDto> updateCustomStatusHold(
-			@PathVariable("id") Long customId,
-			@RequestBody UpdateCustomStatusHoldRequestDto dto) {
+		@PathVariable("id") Long customId,
+		@RequestBody UpdateCustomStatusHoldRequestDto dto) {
 		log.info("🔄 커스텀 요청 보류 상태 변경 요청 - customId: {}, adminId: {}, reason: {}", customId, dto.getAdminId(),
-				dto.getReason());
+			dto.getReason());
 
 		try {
 			UpdateCustomStatusHoldResponseDto responseDto = customService.updateCustomStatusHold(customId, dto);
@@ -170,7 +187,6 @@ public class CustomController {
 			return ResponseEntity.status(500).build();
 		}
 	}
-
 
 	/**
 	 * 📍 커스텀 요청 상태를 '완료(COMPLETED)'로 변경하는 API
@@ -186,12 +202,13 @@ public class CustomController {
 	 */
 	@PutMapping("/{id}/completed")
 	public ResponseEntity<UpdateCustomStatusCompletedResponseDto> updateCustomStatusCompleted(
-			@PathVariable("id") Long customId,
-			@ModelAttribute UpdateCustomStatusCompletedRequestDto dto) {
+		@PathVariable("id") Long customId,
+		@ModelAttribute UpdateCustomStatusCompletedRequestDto dto) {
 		log.info("✅ 커스텀 요청 완료 처리 요청 - customId: {}, adminId: {}", customId, dto.getAdminId());
 
 		try {
-			UpdateCustomStatusCompletedResponseDto responseDto = customService.updateCustomStatusCompleted(customId, dto);
+			UpdateCustomStatusCompletedResponseDto responseDto = customService.updateCustomStatusCompleted(customId,
+				dto);
 
 			log.info("🎉 커스텀 요청 완료 처리 성공 - customId: {}", customId);
 			return ResponseEntity.ok(responseDto);
@@ -203,7 +220,6 @@ public class CustomController {
 			return ResponseEntity.status(500).build();
 		}
 	}
-
 
 	/**
 	 * 📍 커스텀 요청 상태를 '취소(CANCELLED)'로 변경하는 API
@@ -220,8 +236,8 @@ public class CustomController {
 	 */
 	@PutMapping("/{id}/canceled")
 	public ResponseEntity<UpdateCustomStatusInProgressResponseDto> updateCustomStatusCanceled(
-			@PathVariable("id") Long customId,
-			@RequestBody UpdateCustomStatusCanceledRequestDto dto) {
+		@PathVariable("id") Long customId,
+		@RequestBody UpdateCustomStatusCanceledRequestDto dto) {
 		log.info("🔄 커스텀 요청 취소 상태 변경 요청 - customId: {}, adminId: {}", customId, dto.getAdminId());
 
 		try {
