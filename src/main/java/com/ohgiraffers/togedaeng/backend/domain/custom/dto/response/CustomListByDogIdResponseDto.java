@@ -16,10 +16,11 @@ import lombok.Setter;
 public class CustomListByDogIdResponseDto {
 	private Long id;
 	private Long adminId;
+	private String adminNickname;
 	private Status status;
 	private LocalDateTime createdAt;     // 요청 등록일
 	private LocalDateTime startedAt;     // 요청 진행 시작일
 	private LocalDateTime completedAt;   // 요청 완료일
 	private LocalDateTime canceledAt;    // 요청 취소일
-	private HoldSimpleDto holds;
+	private HoldSimpleDto hold;
 }

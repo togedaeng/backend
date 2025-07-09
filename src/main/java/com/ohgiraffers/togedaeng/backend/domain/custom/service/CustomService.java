@@ -148,10 +148,17 @@ public class CustomService {
 					HoldSimpleDto holdDto =
 						(hold != null) ? new HoldSimpleDto(hold.getId(), hold.getCreatedAt()) : null;
 
+					String adminNickname = null;
+					if (custom.getAdminId() != null) {
+						User admin = userRepository.findById(custom.getAdminId()).orElse(null);
+						adminNickname = (admin != null) ? admin.getNickname() : null;
+					}
+
 					return new CustomListByDogIdResponseDto(
 						custom.getId(),
-						custom.getAdminId(),     // adminId 그대로 전달
-						custom.getStatus(),      // enum 그대로 전달
+						custom.getAdminId(),
+						adminNickname,  // ⭐ 추가
+						custom.getStatus(),
 						custom.getCreatedAt(),
 						custom.getStartedAt(),
 						custom.getCompletedAt(),
