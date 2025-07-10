@@ -497,7 +497,7 @@ public class CustomService {
 			.orElseThrow(() -> new IllegalArgumentException("해당 커스텀 요청이 존재하지 않습니다."));
 
 		// 상태 변경 및 관리자 아이디, 취소일자 설정
-		custom.setStatus(Status.CANCELLED);
+		custom.setStatus(Status.CANCELED);
 		custom.setAdminId(adminId);
 		custom.setCanceledAt(LocalDateTime.now());
 		customRepository.save(custom);
