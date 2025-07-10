@@ -5,5 +5,5 @@ public enum Status {
 	IN_PROGRESS, // 진행중
 	HOLD,        // 보류
 	COMPLETED,   // 완료
-	CANCELLED    // 취소
+	CANCELED    // 취소
 }
