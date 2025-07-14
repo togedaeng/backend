@@ -42,8 +42,7 @@ dependencies {
     // MySQL
     runtimeOnly 'com.mysql:mysql-connector-j'
 
-    // AWS S3 (최신 버전으로 교체)
-    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
+    // AWS S3
     implementation 'com.amazonaws:aws-java-sdk-s3:1.12.174'
 
     // 기타 라이브러리
