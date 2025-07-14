@@ -16,10 +16,10 @@ import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.CreateDogRequest
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogCallNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.request.UpdateDogNameRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.CreateDogResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogDetailResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogListResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogCallNameResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.UpdateDogNameResponseDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogListResponseDto;
-import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogDetailResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.DogOwner;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status;
@@ -122,25 +122,18 @@ public class DogService {
 		try {
 			Pageable pageable = PageRequest.of(page, size);
 			Page<Dog> dogsPage = dogRepository.findAll(pageable);
-			
+
 			List<DogListResponseDto> result = new ArrayList<>();
 			for (Dog dog : dogsPage.getContent()) {
-				DogOwner dogOwner = dogOwnerRepository.findByDogId(dog.getId());
-				String ownerNickname = null;
-				if (dogOwner != null) {
-					User owner = userRepository.findById(dogOwner.getUserId()).orElse(null);
-					ownerNickname = (owner != null) ? owner.getNickname() : null;
-				}
 				result.add(new DogListResponseDto(
-						dog.getId(),
-						dog.getName(),
-						dog.getStatus(),
-						ownerNickname,
-						dog.getCreatedAt(),
-						dog.getDeletedAt()));
+					dog.getId(),
+					dog.getName(),
+					dog.getStatus(),
+					dog.getCreatedAt(),
+					dog.getDeletedAt()));
 			}
-			log.info("✅ 강아지 전체 조회 서비스 성공 - page: {}, size: {}, totalElements: {}, resultCount: {}", 
-					page, size, dogsPage.getTotalElements(), result.size());
+			log.info("✅ 강아지 전체 조회 서비스 성공 - page: {}, size: {}, totalElements: {}, resultCount: {}",
+				page, size, dogsPage.getTotalElements(), result.size());
 
 			return result;
 		} catch (IllegalArgumentException e) {
@@ -165,11 +158,11 @@ public class DogService {
 
 		try {
 			Dog dog = dogRepository.findById(dogId)
-					.orElseThrow(() -> new IllegalArgumentException("해당 강아지가 존재하지 않습니다."));
+				.orElseThrow(() -> new IllegalArgumentException("해당 강아지가 존재하지 않습니다."));
 
 			// DogOwner(여러 명)
 			List<DogOwner> dogOwners = dogOwnerRepository.findAll().stream()
-					.filter(o -> o.getDogId().equals(dogId)).collect(Collectors.toList());
+				.filter(o -> o.getDogId().equals(dogId)).collect(Collectors.toList());
 			List<String> ownerNicknames = new ArrayList<>();
 			List<String> callNames = new ArrayList<>();
 			for (DogOwner owner : dogOwners) {
@@ -182,26 +175,28 @@ public class DogService {
 			List<String> personalities = new ArrayList<>();
 			personalityCombinationRepository.findByDogId(dogId).ifPresent(comb -> {
 				if (comb.getPersonalityId1() != null) {
-					dogPersonalityRepository.findById(comb.getPersonalityId1()).ifPresent(p -> personalities.add(p.getName()));
+					dogPersonalityRepository.findById(comb.getPersonalityId1())
+						.ifPresent(p -> personalities.add(p.getName()));
 				}
 				if (comb.getPersonalityId2() != null) {
-					dogPersonalityRepository.findById(comb.getPersonalityId2()).ifPresent(p -> personalities.add(p.getName()));
+					dogPersonalityRepository.findById(comb.getPersonalityId2())
+						.ifPresent(p -> personalities.add(p.getName()));
 				}
 			});
 
 			DogDetailResponseDto result = new DogDetailResponseDto(
-					dog.getId(),
-					dog.getName(),
-					dog.getGender(),
-					dog.getBirth(),
-					personalities,
-					callNames,
-					dog.getStatus(),
-					ownerNicknames,
-					dog.getCreatedAt(),
-					dog.getUpdatedAt(),
-					dog.getDeletedAt(),
-					dog.getRenderedUrl());
+				dog.getId(),
+				dog.getName(),
+				dog.getGender(),
+				dog.getBirth(),
+				personalities,
+				callNames,
+				dog.getStatus(),
+				ownerNicknames,
+				dog.getCreatedAt(),
+				dog.getUpdatedAt(),
+				dog.getDeletedAt(),
+				dog.getRenderedUrl());
 			log.info("✅ 강아지 단일 상세 조회 서비스 성공 - dogId: {}", dogId);
 
 			return result;
@@ -236,10 +231,10 @@ public class DogService {
 		try {
 			// 강아지 엔티티 조회
 			Dog dog = dogRepository.findById(dogId)
-					.orElseThrow(() -> {
-						log.warn("❌ 강아지 조회 실패 - dogId: {}", dogId);
-						return new IllegalArgumentException("해당 강아지가 존재하지 않습니다.");
-					});
+				.orElseThrow(() -> {
+					log.warn("❌ 강아지 조회 실패 - dogId: {}", dogId);
+					return new IllegalArgumentException("해당 강아지가 존재하지 않습니다.");
+				});
 
 			// 소유자 권한 체크
 			boolean isOwner = dogOwnerRepository.existsByDogIdAndUserId(dogId, userId);
@@ -287,10 +282,10 @@ public class DogService {
 		try {
 			// DogOwner 엔티티 조회
 			DogOwner dogOwner = dogOwnerRepository.findByDogIdAndUserId(dogId, userId)
-					.orElseThrow(() -> {
-						log.warn("❌ DogOwner 조회 실패 - dogId: {}, userId: {}", dogId, userId);
-						return new IllegalArgumentException("해당 강아지의 소유자 정보가 존재하지 않습니다.");
-					});
+				.orElseThrow(() -> {
+					log.warn("❌ DogOwner 조회 실패 - dogId: {}, userId: {}", dogId, userId);
+					return new IllegalArgumentException("해당 강아지의 소유자 정보가 존재하지 않습니다.");
+				});
 
 			// 소유자 권한 체크
 			boolean isOwner = dogOwnerRepository.existsByDogIdAndUserId(dogId, userId);
