@@ -1,5 +1,6 @@
 package com.ohgiraffers.togedaeng.backend.domain.dog.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,4 +19,6 @@ public interface DogOwnerRepository extends JpaRepository<DogOwner, Long> {
 
 	@Query("SELECT o.dogId FROM DogOwner o WHERE o.userId = :userId")
 	Long findDogIdByUserId(Long userId); // userId로 dogId찾기
+
+	List<DogOwner> findOwnerIdByDogId(Long dogId);
 }
