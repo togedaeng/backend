@@ -194,10 +194,11 @@ public class CustomService {
 				String dogName = (dog != null) ? dog.getName() : null;
 
 				// Owner 정보
-				DogOwner dogOwner = dogOwnerRepository.findByDogId(custom.getDogId());
 				String ownerNickname = null;
-				if (dogOwner != null) {
-					User owner = userRepository.findById(dogOwner.getUserId()).orElse(null);
+				List<DogOwner> dogOwners = dogOwnerRepository.findByDogId(custom.getDogId());
+				if (!dogOwners.isEmpty()) {
+					Long ownerId = dogOwners.get(0).getUserId(); // 첫 번째 주인 기준
+					User owner = userRepository.findById(ownerId).orElse(null);
 					ownerNickname = (owner != null) ? owner.getNickname() : null;
 				}
 
@@ -257,11 +258,12 @@ public class CustomService {
 			java.time.LocalDate dogBirth = (dog != null) ? dog.getBirth() : null;
 
 			// Owner 정보
-			DogOwner dogOwner = dogOwnerRepository.findByDogId(custom.getDogId());
 			String requesterEmail = null;
 			String requesterNickname = null;
-			if (dogOwner != null) {
-				User owner = userRepository.findById(dogOwner.getUserId()).orElse(null);
+			List<DogOwner> dogOwners = dogOwnerRepository.findByDogId(custom.getDogId());
+			if (!dogOwners.isEmpty()) {
+				Long ownerId = dogOwners.get(0).getUserId(); // 대표 주인 기준
+				User owner = userRepository.findById(ownerId).orElse(null);
 				if (owner != null) {
 					requesterEmail = owner.getEmail();
 					requesterNickname = owner.getNickname();
