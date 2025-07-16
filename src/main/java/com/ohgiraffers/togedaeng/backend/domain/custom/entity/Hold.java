@@ -30,7 +30,7 @@ public class Hold {
 	private Long customId;
 
 	// 보류 사유
-	private String reason;
+	private ImageValidationError reason;
 
 	// 커스텀 보류일
 	@Column(name = "created_at", nullable = false)
@@ -44,7 +44,7 @@ public class Hold {
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
 
-	public Hold(Long customId, String reason, LocalDateTime createdAt) {
+	public Hold(Long customId, ImageValidationError reason, LocalDateTime createdAt) {
 		this.customId = customId;
 		this.reason = reason;
 		this.createdAt = createdAt;

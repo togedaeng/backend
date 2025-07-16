@@ -28,6 +28,7 @@ import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustom
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Custom;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.DogImage;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Hold;
+import com.ohgiraffers.togedaeng.backend.domain.custom.entity.ImageValidationError;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Status;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Type;
 import com.ohgiraffers.togedaeng.backend.domain.custom.repository.CustomRepository;
@@ -280,7 +281,7 @@ public class CustomService {
 			// Hold 정보 (최신 1건)
 			Hold hold = holdRepository.findTopByCustomIdOrderByCreatedAtDesc(custom.getId());
 			LocalDateTime holdCreatedAt = (hold != null) ? hold.getCreatedAt() : null;
-			String holdReason = (hold != null) ? hold.getReason() : null;
+			ImageValidationError holdReason = (hold != null) ? hold.getReason() : null;
 
 			// Dog 이미지 (customId로)
 			List<DogImage> dogImages = dogImageRepository.findByCustomId(custom.getId());
