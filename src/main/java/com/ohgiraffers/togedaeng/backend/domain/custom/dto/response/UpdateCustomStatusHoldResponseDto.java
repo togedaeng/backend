@@ -2,6 +2,7 @@ package com.ohgiraffers.togedaeng.backend.domain.custom.dto.response;
 
 import java.time.LocalDateTime;
 
+import com.ohgiraffers.togedaeng.backend.domain.custom.entity.ImageValidationError;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Status;
 
 import lombok.AllArgsConstructor;
@@ -19,6 +20,6 @@ public class UpdateCustomStatusHoldResponseDto {
 	private Long dogId;
 	private Long adminId;
 	private Status status;
-	private String reason;
+	private ImageValidationError reason;
 	private LocalDateTime holdCreatedAt;
 }

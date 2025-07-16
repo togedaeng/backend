@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.ohgiraffers.togedaeng.backend.domain.custom.entity.ImageValidationError;
 import com.ohgiraffers.togedaeng.backend.domain.custom.entity.Status;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Gender;
 
@@ -26,7 +27,7 @@ public class CustomDetailResponseDto {
 	private LocalDateTime createdAt;
 	private LocalDateTime startedAt;
 	private LocalDateTime holdCreatedAt;
-	private String holdReason;
+	private ImageValidationError holdReason;
 	private LocalDateTime completedAt;
 	private LocalDateTime canceledAt;
 

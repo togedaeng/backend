@@ -36,16 +36,20 @@ public class DogOwner {
 	@Column(length = 50, nullable = false)
 	private String name;
 
+	@Column(name = "is_main", nullable = false)
+	private boolean isMain;
+
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
 
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 
-	public DogOwner(Long userId, Long dogId, @NotBlank(message = "애칭은 필수입니다.") String callName, LocalDateTime createdAt) {
+	public DogOwner(Long userId, Long dogId, @NotBlank(message = "애칭은 필수입니다.") String callName, boolean isMain, LocalDateTime createdAt) {
 		this.userId = userId;
 		this.dogId = dogId;
 		this.name = callName;
+		this.isMain = isMain;
 		this.createdAt = createdAt;
 	}
 }
