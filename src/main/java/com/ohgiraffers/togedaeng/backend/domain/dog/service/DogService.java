@@ -88,7 +88,7 @@ public class DogService {
 		dog.setPersonalityCombination(combination);
 
 		// 4. DogOwner 저장 (userId 관리)
-		DogOwner owner = new DogOwner(userId, dog.getId(), dto.getCallName(), LocalDateTime.now());
+		DogOwner owner = new DogOwner(userId, dog.getId(), dto.getCallName(), true, LocalDateTime.now());
 		dogOwnerRepository.save(owner);
 
 		// 5. 응답 DTO 생성 및 반환
