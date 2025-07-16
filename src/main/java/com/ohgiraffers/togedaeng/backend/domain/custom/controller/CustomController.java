@@ -25,6 +25,7 @@ import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomS
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.CustomDetailResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.CustomListByDogIdResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.CustomListResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusCanceledResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusCompletedResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusHoldResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.response.UpdateCustomStatusInProgressResponseDto;
@@ -235,7 +236,7 @@ public class CustomController {
 	 * @return 상태 변경 결과에 따른 ResponseEntity 반환
 	 */
 	@PutMapping("/{id}/canceled")
-	public ResponseEntity<UpdateCustomStatusInProgressResponseDto> updateCustomStatusCanceled(
+	public ResponseEntity<UpdateCustomStatusCanceledResponseDto> updateCustomStatusCanceled(
 		@PathVariable("id") Long customId,
 		@RequestBody UpdateCustomStatusCanceledRequestDto dto) {
 		log.info("🔄 커스텀 요청 취소 상태 변경 요청 - customId: {}, adminId: {}", customId, dto.getAdminId());
