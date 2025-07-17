@@ -2,6 +2,7 @@ package com.ohgiraffers.togedaeng.backend.global.config;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,6 +20,9 @@ import com.ohgiraffers.togedaeng.backend.global.auth.filter.JwtAuthFilter;
 @EnableWebSecurity
 public class SecurityConfig {
 
+	@Value("${frontend.url}")
+	private String frontendUrl;
+
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
 		http
@@ -28,7 +32,7 @@ public class SecurityConfig {
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers("/auth/**").permitAll()
-				.requestMatchers("/oauth/callback/**", "/api/custom/**", "/api/dog/**").permitAll()
+				.requestMatchers("/oauth/callback/**").permitAll()
 				.requestMatchers("/signup").permitAll()
 				.anyRequest().authenticated()
 			)
@@ -40,7 +44,7 @@ public class SecurityConfig {
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration config = new CorsConfiguration();
-		config.setAllowedOrigins(List.of("http://localhost:3000"));
+		config.setAllowedOrigins(List.of(frontendUrl)); // 환경변수 사용
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		config.setAllowedHeaders(List.of("*"));
 		config.setAllowCredentials(true);
