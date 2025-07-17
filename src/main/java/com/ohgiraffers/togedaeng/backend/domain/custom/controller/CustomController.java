@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.CustomDogRegisterRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCanceledRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCompletedRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusHoldRequestDto;
@@ -256,5 +257,19 @@ public class CustomController {
 	}
 
 	// 커스텀 요청 등록
-	@PostMapping("/")
+	@PostMapping("/create")
+	public ResponseEntity<?> createCustomDog(@RequestBody CustomDogRegisterRequestDto requestDto) {
+		try {
+			CustomDogRegisterRequestDto result = customService.create(requestDto);
+			log.info("커스텀 요청 등록 성공");
+			return ResponseEntity.ok().body(result);
+		} catch (IllegalArgumentException e) {
+			log.warn("⚠️ 커스텀 취소 상태 변경 실패 - {}", e.getMessage());
+			return ResponseEntity.badRequest().build();
+		} catch (Exception e) {
+			log.error("❌ 커스텀 취소 상태 변경 중 예외 발생", e);
+			return ResponseEntity.status(500).build();
+		}
+	}
+
 }

@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.CustomDogRegisterRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCanceledRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusCompletedRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.custom.dto.request.UpdateCustomStatusHoldRequestDto;
@@ -524,5 +525,22 @@ public class CustomService {
 
 	public long countPendingCustomRequests() {
 		return customRepository.countByStatus(Status.PENDING);
+	}
+
+	@Transactional
+	public CustomDogRegisterRequestDto create(CustomDogRegisterRequestDto requestDto) {
+		List<Long> personalityIds = requestDto.getDogInfo().getPersonalityIds();
+
+		if (personalityIds == null || personalityIds.size() < 1 || personalityIds.size() > 2) {
+			throw new IllegalArgumentException("성격은 최소 1개, 최대 2개를 선택해야 합니다.");
+		}
+
+		Long combinationId = personalityCombinationService.getOrCreate(personalityIds);
+
+		Dog dog = Dog.builder()
+			.name(requestDto.getDogInfo().getName())
+			.birth(requestDto.getDogInfo().getBirth())
+			.gender(requestDto.getDogInfo().getGender())
+			.
 	}
 }
