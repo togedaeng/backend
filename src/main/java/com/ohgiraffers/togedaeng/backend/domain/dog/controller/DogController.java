@@ -73,7 +73,7 @@ public class DogController {
 			Long customId = customService.uploadMainImage(responseDto.getId(), createDogRequestDto.getMainImage());
 			log.info("📦 커스텀 메인 이미지 업로드 완료 - customId: {}", customId);
 
-			// ✅ Slack 알림 전송 (커스텀 요청 완성 후)
+			// ✅ Slack 알림 전송 (커스텀 요청시)
 			slackNotificationService.sendSlackNotification(responseDto);
 
 			return ResponseEntity.ok(customId);
