@@ -2,10 +2,12 @@ package com.ohgiraffers.togedaeng.backend.global.auth.filter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -38,15 +40,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             log.info("Token found, validating...");
             if (jwtProvider.validateToken(token)) {
                 try {
-                    // JWT 토큰에서 사용자 ID 추출
                     Long userId = jwtProvider.getUserId(token);
                     String email = jwtProvider.getEmail(token);
+                    String role = jwtProvider.getClaims(token).get("role", String.class);
                     
-                    log.info("Token is valid for userId: {}, email: {}", userId, email);
+                    log.info("Token is valid for userId: {}, email: {}, role: {}", userId, email, role);
+
+                    SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
                     
                     // Spring Security Authentication 객체 생성
                     UsernamePasswordAuthenticationToken authentication = 
-                        new UsernamePasswordAuthenticationToken(userId, null, new ArrayList<>());
+                        new UsernamePasswordAuthenticationToken(userId, null, List.of(authority));
                     
                     // SecurityContext에 인증 정보 설정
                     SecurityContextHolder.getContext().setAuthentication(authentication);
