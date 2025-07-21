@@ -22,10 +22,12 @@ import org.springframework.web.multipart.MultipartFile;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.request.CreateNoticeRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.request.UpdateNoticeRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.CreateNoticeResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.DeleteNoticeResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.NoticeDetailResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.NoticeListResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.UpdateNoticeResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.service.NoticeService;
+import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.DeleteUserResponseDto;
 import com.ohgiraffers.togedaeng.backend.global.auth.service.JwtExtractor;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -165,4 +167,27 @@ public class NoticeController {
 	}
 
 	// 공지 삭제
+	@PatchMapping("/{id}/status")
+	public ResponseEntity<DeleteNoticeResponseDto> deleteNotice(
+		@PathVariable Long id,
+		HttpServletRequest request) {
+		log.info("🚀 [공지 삭제] Patch /api/notice/{}/status 요청 수신", id);
+
+		try {
+			Long userId = jwtExtractor.extractUserId(request);
+			DeleteNoticeResponseDto responseDto = noticeService.deleteNotice(id, userId);
+			log.info("✅ 공지 삭제 성공 - id: {}", id);
+
+			return ResponseEntity.ok(responseDto);
+		} catch (IllegalArgumentException e) {
+			log.warn("⚠️ 공지 삭제 실패 (잘못된 요청) - {}", e.getMessage());
+			return ResponseEntity.badRequest().build();
+		} catch (AccessDeniedException e) {
+			log.warn("⚠️ 공지 삭제 실패 (권한 없음) - {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		} catch (Exception e) {
+			log.error("❌ 공지 삭제 중 서버 오류 - id: {}", id, e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 }

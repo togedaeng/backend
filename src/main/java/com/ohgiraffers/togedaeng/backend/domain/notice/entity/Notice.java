@@ -60,6 +60,9 @@ public class Notice {
 	@OneToMany(mappedBy = "notice", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<NoticeImage> images = new ArrayList<>();
 
+	@Enumerated(EnumType.STRING)
+	private Status status = Status.PUBLISHED;
+
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
 
@@ -79,5 +82,10 @@ public class Notice {
 	public void addImage(NoticeImage noticeImage) {
 		this.images.add(noticeImage);
 		noticeImage.setNotice(this);
+	}
+
+	public void softDelete() {
+		this.status = Status.DELETED;
+		this.deletedAt = LocalDateTime.now();
 	}
 }

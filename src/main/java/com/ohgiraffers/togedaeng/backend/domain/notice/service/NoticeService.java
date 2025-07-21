@@ -19,6 +19,7 @@ import com.ohgiraffers.togedaeng.backend.domain.custom.service.S3Uploader;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.request.CreateNoticeRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.request.UpdateNoticeRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.CreateNoticeResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.DeleteNoticeResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.NoticeDetailResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.NoticeListResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.UpdateNoticeResponseDto;
@@ -243,5 +244,40 @@ public class NoticeService {
 		);
 	}
 
-	// 공지 삭제
+	/**
+	 * 📍 공지 삭제 서비스 (소프트 딜리트)
+	 * - 공지를 실제로 삭제하는 대신 상태를 DELETED로 변경한다.
+	 * - 공지 작성자 본인이거나 관리자(ADMIN)일 경우에만 삭제를 허용한다.
+	 *
+	 * @param noticeId 삭제할 공지 ID
+	 * @param userId   요청을 보낸 사용자의 ID
+	 * @throws AccessDeniedException 삭제 권한이 없을 경우 발생
+	 */
+	@Transactional
+	public DeleteNoticeResponseDto deleteNotice(Long noticeId, Long userId) throws AccessDeniedException {
+		log.info("🚀 [공지 삭제] 시작 - noticeId: {}, userId: {}", noticeId, userId);
+
+		// 1. 사용자 및 공지 정보 조회
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. id: " + userId));
+		// 삭제된 공지도 찾아야 하므로 일반 findById 사용
+		Notice notice = noticeRepository.findById(noticeId)
+			.orElseThrow(() -> new IllegalArgumentException("공지를 찾을 수 없습니다. id: " + noticeId));
+
+		// 2. 권한 검사 (본인 또는 ADMIN 확인)
+		if (!user.getRole().equals(Role.ADMIN) && !notice.getUser().getId().equals(userId)) {
+			log.warn("⚠️ 공지 삭제 권한 없음 - noticeId: {}, userId: {}", noticeId, userId);
+			throw new AccessDeniedException("공지를 삭제할 권한이 없습니다.");
+		}
+
+		// 3. 소프트 딜리트 처리
+		notice.softDelete();
+		log.info("✅ 공지 삭제(소프트) 서비스 성공 - noticeId: {}", notice.getId());
+
+		return new DeleteNoticeResponseDto(
+			notice.getId(),
+			notice.getTitle(),
+			notice.getDeletedAt()
+		);
+	}
 }
