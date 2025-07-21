@@ -6,11 +6,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogListResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.NoticeDetailResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.NoticeListResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.service.NoticeService;
 
@@ -55,7 +57,32 @@ public class NoticeController {
 		}
 	}
 
-	// 공지 단일 조회
+	/**
+	 * 📍 공지 단일 상세 조회 API
+	 * - 특정 공지의 상세 정보를 반환한다.
+	 *
+	 * - 요청 방식: GET
+	 * - 요청 경로: /api/notices/{id}
+	 *
+	 * @param noticeId 조회할 공지 ID (PathVariable)
+	 * @return 200 OK, 공지 상세 정보 (NoticeDetailResponseDto)
+	 */
+	@GetMapping("/{id}")
+	public ResponseEntity<NoticeDetailResponseDto> getNoticeById(@PathVariable("id") Long noticeId) {
+		log.info("🔍 공지 단일 상세 조회 요청 - noticeId: {}", noticeId);
+
+		try {
+			NoticeDetailResponseDto result = noticeService.getNoticeById(noticeId);
+			log.info("✅ 공지 단일 상세 조회 성공 - noticeId: {}", noticeId);
+			return ResponseEntity.ok(result);
+		} catch (IllegalArgumentException e) {
+			log.warn("⚠️ 공지 단일 상세 조회 실패 - {}", e.getMessage());
+			return ResponseEntity.badRequest().build();
+		} catch (Exception e) {
+			log.error("❌ 공지 단일 상세 조회 중 서버 오류 - noticeId: {}", noticeId, e);
+			return ResponseEntity.status(500).build();
+		}
+	}
 
 	// 공지 작성
 

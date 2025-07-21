@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import com.ohgiraffers.togedaeng.backend.domain.dog.dto.response.DogListResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.dog.entity.Dog;
+import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.NoticeDetailResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.NoticeListResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.entity.Notice;
 import com.ohgiraffers.togedaeng.backend.domain.notice.repository.NoticeRepository;
@@ -65,7 +66,40 @@ public class NoticeService {
 		}
 	}
 
-	// 공지 단일 조회
+	/**
+	 * 📍 공지 단일 상세 조회 서비스
+	 * - ID로 특정 공지를 조회하여 상세 정보를 반환한다.
+	 * - 연관된 작성자(User) 정보도 함께 조회한다.
+	 *
+	 * @param noticeId 조회할 공지 ID
+	 * @return 공지 상세 정보 (NoticeDetailResponseDto)
+	 * @throws IllegalArgumentException 해당 ID의 공지가 없을 경우 발생
+	 */
+	public NoticeDetailResponseDto getNoticeById(Long noticeId) {
+		log.info("🔍 공지 단일 상세 조회 서비스 시작 - noticeId: {}", noticeId);
+
+		// Repository에서 ID로 Notice를 User 정보와 함께 조회 (Fetch Join)
+		Notice notice = noticeRepository.findByIdWithUser(noticeId)
+			.orElseThrow(() -> {
+				log.warn("⚠️ 존재하지 않는 공지 조회 시도 - noticeId: {}", noticeId);
+				return new IllegalArgumentException("해당 공지를 찾을 수 없습니다. id: " + noticeId);
+			});
+
+		// Entity를 DTO로 변환
+		NoticeDetailResponseDto responseDto = new NoticeDetailResponseDto(
+			notice.getId(),
+			notice.getCategory(),
+			notice.getTitle(),
+			notice.getContent(),
+			notice.getUser().getNickname(), // Fetch Join으로 조회했기 때문에 추가 쿼리 없음
+			notice.getImageUrl(),
+			notice.getCreatedAt(),
+			notice.getUpdatedAt()
+		);
+
+		log.info("✅ 공지 단일 상세 조회 서비스 성공 - noticeId: {}", noticeId);
+		return responseDto;
+	}
 
 	// 공지 작성
 
