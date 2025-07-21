@@ -61,7 +61,7 @@ public class DogController {
 	public ResponseEntity<Long> createDogMain(
 		@ModelAttribute @Valid CreateDogRequestDto createDogRequestDto,
 		HttpServletRequest request) {
-		log.info("🐶 [강아지 등록 및 메인 업로드] POST /api/dogs/create-main 요청 수신");
+		log.info("🐶 [강아지 등록 및 메인 업로드] POST /api/dog/create-main 요청 수신");
 
 		try {
 			Long userId = jwtExtractor.extractUserId(request);
@@ -99,7 +99,7 @@ public class DogController {
 	public ResponseEntity<Void> uploadSubImages(
 		@PathVariable Long customId,
 		@RequestParam("subImages") List<MultipartFile> subImages) {
-		log.info("📦 [서브 이미지 업로드] POST /api/dogs/{}/upload-sub 요청 수신", customId);
+		log.info("📦 [서브 이미지 업로드] POST /api/dog/{}/upload-sub 요청 수신", customId);
 
 		try {
 			customService.uploadSubImages(customId, subImages);
@@ -231,7 +231,7 @@ public class DogController {
 			@PathVariable("id") Long id,
 			@RequestBody UpdateDogCallNameRequestDto requestDto,
 			HttpServletRequest request) {
-		log.info("🐶 [강아지 애칭 수정] PATCH /api/dogs/{}/call-name 요청 수신", id);
+		log.info("🐶 [강아지 애칭 수정] PATCH /api/dog/{}/call-name 요청 수신", id);
 
 		try {
 			Long userId = jwtExtractor.extractUserId(request);
