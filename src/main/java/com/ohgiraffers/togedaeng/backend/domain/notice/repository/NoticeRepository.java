@@ -15,6 +15,10 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
 	@Query("SELECT n FROM Notice n JOIN FETCH n.user")
 	Page<Notice> findAllWithUser(Pageable pageable);
 
-	@Query("SELECT n FROM Notice n JOIN FETCH n.user WHERE n.id = :id")
-	Optional<Notice> findByIdWithUser(@Param("id") Long id);
+	@Query("SELECT DISTINCT n FROM Notice n " +
+		"JOIN FETCH n.user u " +
+		"LEFT JOIN FETCH n.images i " +
+		"WHERE n.id = :noticeId")
+	Optional<Notice> findNoticeDetailsById(@Param("noticeId") Long noticeId);
+
 }

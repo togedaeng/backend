@@ -1,9 +1,12 @@
 package com.ohgiraffers.togedaeng.backend.domain.notice.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.User;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,6 +17,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -52,8 +56,9 @@ public class Notice {
 	private String content;
 
 	// 이미지 url
-	@Column(name = "image_url")
-	private String imageUrl;
+	@Builder.Default
+	@OneToMany(mappedBy = "notice", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<NoticeImage> images = new ArrayList<>();
 
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
@@ -63,4 +68,16 @@ public class Notice {
 
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
+
+	public void update(String title, String content, Category category) {
+		this.title = title;
+		this.content = content;
+		this.category = category;
+		this.updatedAt = LocalDateTime.now();
+	}
+
+	public void addImage(NoticeImage noticeImage) {
+		this.images.add(noticeImage);
+		noticeImage.setNotice(this);
+	}
 }

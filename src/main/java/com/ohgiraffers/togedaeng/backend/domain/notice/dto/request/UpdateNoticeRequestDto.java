@@ -13,20 +13,20 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class CreateNoticeRequestDto {
+public class UpdateNoticeRequestDto {
 
-	private Category category;
 	private String title;
 	private String content;
-	private List<String> imageUrls;
+	private Category category;
+	private List<Long> deleteImageIds;
 
 	@Override
 	public String toString() {
-		return "CreateNoticeRequestDto{" +
-			"category=" + category +
-			", title='" + title + '\'' +
+		return "UpdateNoticeRequestDto{" +
+			"title='" + title + '\'' +
 			", content='" + content + '\'' +
-			", imageUrls=" + imageUrls +
+			", category=" + category +
+			", deleteImageIds=" + deleteImageIds +
 			'}';
 	}
 }

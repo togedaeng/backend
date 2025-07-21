@@ -1,6 +1,7 @@
 package com.ohgiraffers.togedaeng.backend.domain.notice.dto.response;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.ohgiraffers.togedaeng.backend.domain.notice.entity.Category;
 
@@ -20,7 +21,7 @@ public class NoticeDetailResponseDto {
 	private String title;
 	private String content;
 	private String authorNickname; // 작성자 닉네임
-	private String imageUrl;
+	private List<String> imageUrls;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 
@@ -32,7 +33,7 @@ public class NoticeDetailResponseDto {
 			", title='" + title + '\'' +
 			", content='" + content + '\'' +
 			", authorNickname='" + authorNickname + '\'' +
-			", imageUrl='" + imageUrl + '\'' +
+			", imageUrls=" + imageUrls +
 			", createdAt=" + createdAt +
 			", updatedAt=" + updatedAt +
 			'}';

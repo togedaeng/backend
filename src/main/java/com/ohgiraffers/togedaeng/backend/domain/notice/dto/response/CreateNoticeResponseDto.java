@@ -1,5 +1,7 @@
 package com.ohgiraffers.togedaeng.backend.domain.notice.dto.response;
 
+import java.util.List;
+
 import com.ohgiraffers.togedaeng.backend.domain.notice.entity.Category;
 
 import lombok.AllArgsConstructor;
@@ -18,8 +20,7 @@ public class CreateNoticeResponseDto {
 	private Category category;
 	private String title;
 	private String content;
-	private String imageUrl; // 이미지가 없는 경우 null이 될 수 있음
-
+	private List<String> imageUrls;
 
 	@Override
 	public String toString() {
@@ -29,7 +30,7 @@ public class CreateNoticeResponseDto {
 			", category=" + category +
 			", title='" + title + '\'' +
 			", content='" + content + '\'' +
-			", imageUrl='" + imageUrl + '\'' +
+			", imageUrls=" + imageUrls +
 			'}';
 	}
 }
