@@ -25,6 +25,7 @@ import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.NoticeListRe
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.UpdateNoticeResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.entity.Notice;
 import com.ohgiraffers.togedaeng.backend.domain.notice.entity.NoticeImage;
+import com.ohgiraffers.togedaeng.backend.domain.notice.entity.Status;
 import com.ohgiraffers.togedaeng.backend.domain.notice.repository.NoticeImageRepository;
 import com.ohgiraffers.togedaeng.backend.domain.notice.repository.NoticeRepository;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.Role;
@@ -125,6 +126,7 @@ public class NoticeService {
 			.category(requestDto.getCategory())
 			.title(requestDto.getTitle())
 			.content(requestDto.getContent())
+			.status(Status.PUBLISHED)
 			.createdAt(LocalDateTime.now())
 			.build();
 
