@@ -2,8 +2,11 @@ package com.ohgiraffers.togedaeng.backend.domain.notice.dto.response;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import com.ohgiraffers.togedaeng.backend.domain.notice.dto.request.NoticeImageDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.entity.Category;
+import com.ohgiraffers.togedaeng.backend.domain.notice.entity.Notice;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,7 +14,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 public class NoticeDetailResponseDto {
@@ -21,7 +23,7 @@ public class NoticeDetailResponseDto {
 	private String title;
 	private String content;
 	private String authorNickname; // 작성자 닉네임
-	private List<String> imageUrls;
+	private List<NoticeImageDto> images;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 
@@ -33,9 +35,21 @@ public class NoticeDetailResponseDto {
 			", title='" + title + '\'' +
 			", content='" + content + '\'' +
 			", authorNickname='" + authorNickname + '\'' +
-			", imageUrls=" + imageUrls +
 			", createdAt=" + createdAt +
 			", updatedAt=" + updatedAt +
 			'}';
+	}
+
+	public NoticeDetailResponseDto(Long id, Category category, String title, String content, String nickname,
+		List<NoticeImageDto> images,
+		LocalDateTime createdAt, LocalDateTime updatedAt) {
+		this.id = id;
+		this.category = category;
+		this.title = title;
+		this.content = content;
+		this.authorNickname = authorNickname;
+		this.images = images;
+		this.createdAt = createdAt;
+		this.updatedAt = updatedAt;
 	}
 }
