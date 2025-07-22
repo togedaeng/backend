@@ -7,8 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.CreateInquiryAnswerRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.CreateInquiryRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.UpdateInquiryRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.CreateInquiryResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.InquiryAnswerDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.InquiryDetailResponseDto;
@@ -125,8 +128,50 @@ public class InquiryController {
 		}
 	}
 
+	/**
+	 * 📍 문의 수정 API (이미지 처리 포함)
+	 * - 특정 문의의 내용을 수정한다. (기존 이미지 삭제 및 새 이미지 추가 가능)
+	 * - 문의 작성자만 수정 가능하다.
+	 *
+	 * - 요청 방식: PATCH
+	 * - 요청 경로: /api/inquiries/{inquiryId}
+	 *
+	 * @param inquiryId  수정할 문의의 ID
+	 * @param requestDto 수정할 내용 및 삭제할 이미지 ID (JSON 형식의 파트)
+	 * @param newImages  새로 업로드할 이미지 파일 리스트 (선택 사항)
+	 * @param request    JWT 토큰 추출을 위한 HttpServletRequest
+	 * @return 200 OK, 수정된 문의의 상세 정보
+	 */
+	@PatchMapping(value = "/{inquiryId}/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<InquiryDetailResponseDto> updateInquiry(
+		@PathVariable Long inquiryId,
+		@RequestPart("requestDto") UpdateInquiryRequestDto requestDto,
+		@RequestPart(value = "newImages", required = false) List<MultipartFile> newImages,
+		HttpServletRequest request) {
+		log.info("🚀 [문의 수정] PATCH /api/inquiry/{} 요청 수신", inquiryId);
 
-	// 문의 수정 (답변 안 달렸을 때만)
+		try {
+			Long userId = jwtExtractor.extractUserId(request);
+			log.debug("➡️ userId 추출 완료: {}", userId);
+
+			InquiryDetailResponseDto responseDto = inquiryService.updateInquiry(inquiryId, requestDto, newImages, userId);
+			log.info("✅ 문의 수정 성공 - inquiryId: {}", inquiryId);
+
+			return ResponseEntity.ok(responseDto);
+		} catch (IllegalArgumentException e) {
+			log.warn("⚠️ 문의 수정 실패 (리소스를 찾을 수 없음) - {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		} catch (AccessDeniedException e) {
+			log.warn("⚠️ 문의 수정 실패 (권한 없음) - {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		} catch (IllegalStateException e) {
+			log.warn("⚠️ 문의 수정 실패 (상태 오류) - {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.CONFLICT).build();
+		} catch (Exception e) {
+			log.error("❌ 문의 수정 중 서버 오류 - inquiryId: {}", inquiryId, e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 
 	/**
 	 * 📍 문의 답변 작성 API

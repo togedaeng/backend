@@ -76,4 +76,11 @@ public class Inquiry {
 		this.images.add(image);
 		image.setInquiry(this);
 	}
+
+	public void update(Category category, String title, String content) {
+		this.category = category;
+		this.title = title;
+		this.content = content;
+		this.updatedAt = LocalDateTime.now();
+	}
 }

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,6 +20,7 @@ import com.ohgiraffers.togedaeng.backend.domain.custom.service.S3Uploader;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.controller.InquiryController;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.CreateInquiryAnswerRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.CreateInquiryRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.UpdateInquiryRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.CreateInquiryResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.InquiryAnswerDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.InquiryDetailResponseDto;
@@ -131,8 +133,77 @@ public class InquiryService {
 		return CreateInquiryResponseDto.from(savedInquiry);
 	}
 
-	// 문의 수정 (답변 안 달렸을 때만)
+	/**
+	 * 📍 문의 수정 서비스 (이미지 처리 포함)
+	 * - 답변 대기 상태인 문의만 수정 가능하며, 작성자 본인만 수정을 허용한다.
+	 * - 기존 이미지를 삭제하고 새로운 이미지를 추가할 수 있다.
+	 *
+	 * @param inquiryId  수정할 문의 ID
+	 * @param requestDto 수정할 문의 내용 및 삭제할 이미지 ID 리스트
+	 * @param newImages  새로 업로드할 이미지 파일 리스트
+	 * @param userId     요청을 보낸 사용자의 ID
+	 * @return 수정된 문의의 상세 정보
+	 * @throws AccessDeniedException 수정 권한이 없을 경우
+	 * @throws IllegalStateException 답변이 이미 달렸거나 삭제된 경우
+	 */
+	@Transactional
+	public InquiryDetailResponseDto updateInquiry(Long inquiryId, UpdateInquiryRequestDto requestDto, List<MultipartFile> newImages, Long userId) {
+		log.info("🚀 [문의 수정] 서비스 시작 - inquiryId: {}, userId: {}", inquiryId, userId);
 
+		Inquiry inquiry = inquiryRepository.findInquiryDetailsById(inquiryId)
+			.orElseThrow(() -> new IllegalArgumentException("수정할 문의를 찾을 수 없습니다. id: " + inquiryId));
+
+		// 1. 권한 검증: 작성자 본인 확인
+		if (!inquiry.getUser().getId().equals(userId)) {
+			log.warn("⚠️ [문의 수정] 권한 없음 - inquiryId: {}, userId: {}", inquiryId, userId);
+			throw new AccessDeniedException("문의를 수정할 권한이 없습니다.");
+		}
+
+		// 2. 상태 검증: 답변 대기 상태 확인
+		if (inquiry.getStatus() != Status.WAITING) {
+			log.warn("⚠️ [문의 수정] 상태 오류 - inquiryId: {}, status: {}", inquiryId, inquiry.getStatus());
+			throw new IllegalStateException("답변이 완료된 문의는 수정할 수 없습니다.");
+		}
+
+		// 3. 기존 이미지 삭제 처리
+		if (requestDto.getDeleteImageIds() != null && !requestDto.getDeleteImageIds().isEmpty()) {
+			List<InquiryImage> imagesToRemove = inquiry.getImages().stream()
+				.filter(image -> requestDto.getDeleteImageIds().contains(image.getId()))
+				.collect(Collectors.toList());
+
+			for (InquiryImage image : imagesToRemove) {
+				s3Uploader.delete(image.getImageUrl()); // S3에서 파일 삭제
+				inquiry.getImages().remove(image); // 컬렉션에서 제거 (orphanRemoval=true로 DB에서도 삭제됨)
+			}
+			log.info("🖼️ 기존 문의 이미지 {}개 삭제 성공", imagesToRemove.size());
+		}
+
+		// 4. 새로운 이미지 추가
+		if (newImages != null && !newImages.isEmpty()) {
+			for (MultipartFile image : newImages) {
+				try {
+					String imageUrl = s3Uploader.upload(image, "inquiries");
+					inquiry.addImage(new InquiryImage(null, null, imageUrl));
+				} catch (IOException e) {
+					throw new RuntimeException("새 이미지 업로드에 실패했습니다.");
+				}
+			}
+			log.info("🖼️ 새로운 문의 이미지 {}개 추가 성공", newImages.size());
+		}
+
+		// 5. 문의 내용 업데이트
+		inquiry.update(
+			requestDto.getCategory(),
+			requestDto.getTitle(),
+			requestDto.getContent()
+		);
+
+		inquiryRepository.save(inquiry);
+
+		log.info("✅ [문의 수정] 서비스 성공 - inquiryId: {}", inquiry.getId());
+
+		return InquiryDetailResponseDto.from(inquiry);
+	}
 
 	/**
 	 * 📍 문의 답변 작성 서비스
