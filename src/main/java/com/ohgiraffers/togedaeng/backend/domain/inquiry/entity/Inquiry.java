@@ -72,7 +72,8 @@ public class Inquiry {
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 
-	@Column(name = "deleted_at")
-	private LocalDateTime deletedAt;
-
+	public void addImage(InquiryImage image) {
+		this.images.add(image);
+		image.setInquiry(this);
+	}
 }

@@ -48,7 +48,4 @@ public class InquiryAnswer {
 
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
-
-	@Column(name = "updated_at")
-	private LocalDateTime updatedAt;
 }
