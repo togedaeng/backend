@@ -7,17 +7,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.CreateInquiryAnswerRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.CreateInquiryRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.CreateInquiryResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.InquiryAnswerDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.InquiryDetailResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.InquiryListResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.service.InquiryService;
@@ -124,6 +128,44 @@ public class InquiryController {
 
 	// 문의 수정 (답변 안 달렸을 때만)
 
-	// 문의 답변 작성
+	/**
+	 * 📍 문의 답변 작성 API
+	 * - 특정 문의에 대한 답변을 등록한다. (관리자 권한 필요)
+	 *
+	 * - 요청 방식: POST
+	 * - 요청 경로: /api/inquiries/{inquiryId}/answer
+	 *
+	 * @param inquiryId 답변을 등록할 문의 ID
+	 * @param requestDto 답변 내용
+	 * @param request JWT 토큰에서 관리자 ID를 추출하기 위한 HttpServletRequest
+	 * @return 201 Created, 생성된 답변 정보
+	 */
+	@PostMapping("/{inquiryId}/answer")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<InquiryAnswerDto> createInquiryAnswer(
+		@PathVariable Long inquiryId,
+		@RequestBody CreateInquiryAnswerRequestDto requestDto,
+		HttpServletRequest request) {
+		log.info("🚀 [답변 등록] POST /api/inquiry/{}/answer 요청 수신", inquiryId);
 
+		try {
+			Long adminId = jwtExtractor.extractUserId(request);
+			log.debug("➡️ adminId 추출 완료: {}", adminId);
+
+			InquiryAnswerDto responseDto = inquiryService.createInquiryAnswer(inquiryId, requestDto, adminId);
+			log.info("✅ 답변 등록 성공 - inquiryId: {}, answerId: {}", inquiryId, responseDto.getAnswerId());
+
+			return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+		} catch (IllegalArgumentException e) {
+			log.warn("⚠️ 답변 등록 실패 (잘못된 요청) - {}", e.getMessage());
+			return ResponseEntity.badRequest().build();
+		} catch (IllegalStateException e) {
+			log.warn("⚠️ 답변 등록 실패 (상태 오류) - {}", e.getMessage());
+			// 이미 처리된 요청이므로 409 Conflict 반환
+			return ResponseEntity.status(HttpStatus.CONFLICT).build();
+		} catch (Exception e) {
+			log.error("❌ 답변 등록 중 서버 오류", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 }

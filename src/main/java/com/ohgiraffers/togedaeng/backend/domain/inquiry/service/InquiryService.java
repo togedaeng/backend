@@ -17,13 +17,17 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.ohgiraffers.togedaeng.backend.domain.custom.service.S3Uploader;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.controller.InquiryController;
+import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.CreateInquiryAnswerRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.CreateInquiryRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.CreateInquiryResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.InquiryAnswerDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.InquiryDetailResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response.InquiryListResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.entity.Inquiry;
+import com.ohgiraffers.togedaeng.backend.domain.inquiry.entity.InquiryAnswer;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.entity.InquiryImage;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.entity.Status;
+import com.ohgiraffers.togedaeng.backend.domain.inquiry.repository.InquiryAnswerRepository;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.repository.InquiryRepository;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.User;
 import com.ohgiraffers.togedaeng.backend.domain.user.repository.UserRepository;
@@ -37,6 +41,7 @@ public class InquiryService {
 	private final Logger log = LoggerFactory.getLogger(InquiryController.class);
 
 	private final InquiryRepository inquiryRepository;
+	private final InquiryAnswerRepository inquiryAnswerRepository;
 	private final UserRepository userRepository;
 	private final S3Uploader s3Uploader;
 
@@ -126,7 +131,51 @@ public class InquiryService {
 		return CreateInquiryResponseDto.from(savedInquiry);
 	}
 
-	// 문의 답변 작성
-
 	// 문의 수정 (답변 안 달렸을 때만)
+
+
+	/**
+	 * 📍 문의 답변 작성 서비스
+	 * - 특정 문의에 대한 답변을 작성하고, 문의의 상태를 'ANSWERED'로 변경한다.
+	 * - 답변은 관리자만 작성할 수 있다.
+	 *
+	 * @param inquiryId 답변을 달 문의 ID
+	 * @param requestDto 답변 내용
+	 * @param adminId 답변을 작성하는 관리자 ID
+	 * @return 작성된 답변 정보 DTO
+	 * @throws IllegalStateException 이미 답변이 달린 경우 발생
+	 * @throws IllegalArgumentException 문의 또는 관리자 ID가 유효하지 않을 경우 발생
+	 */
+	@Transactional
+	public InquiryAnswerDto createInquiryAnswer(Long inquiryId, CreateInquiryAnswerRequestDto requestDto, Long adminId) {
+		log.info("🚀 [답변 등록] 서비스 시작 - inquiryId: {}, adminId: {}", inquiryId, adminId);
+
+		Inquiry inquiry = inquiryRepository.findById(inquiryId)
+			.orElseThrow(() -> new IllegalArgumentException("답변할 문의를 찾을 수 없습니다. id: " + inquiryId));
+
+		// 이미 답변이 달렸거나 삭제된 문의인지 확인
+		if (inquiry.getStatus() != Status.WAITING) {
+			throw new IllegalStateException("이미 답변이 완료되었거나 처리할 수 없는 문의입니다.");
+		}
+
+		User admin = userRepository.findById(adminId)
+			.orElseThrow(() -> new IllegalArgumentException("관리자 정보를 찾을 수 없습니다. id: " + adminId));
+
+		InquiryAnswer newAnswer = InquiryAnswer.builder()
+			.inquiry(inquiry)
+			.user(admin)
+			.comment(requestDto.getComment())
+			.createdAt(LocalDateTime.now())
+			.build();
+
+		InquiryAnswer savedAnswer = inquiryAnswerRepository.save(newAnswer);
+
+		// 문의 상태를 'ANSWERED'로 변경하고, 답변을 연결
+		inquiry.setStatus(Status.ANSWERED);
+		inquiry.setInquiryAnswer(savedAnswer);
+		inquiry.setUpdatedAt(LocalDateTime.now());
+
+		log.info("✅ [답변 등록] 서비스 성공 - answerId: {}", savedAnswer.getId());
+		return InquiryAnswerDto.from(savedAnswer);
+	}
 }
