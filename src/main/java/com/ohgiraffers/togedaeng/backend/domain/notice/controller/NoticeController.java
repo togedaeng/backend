@@ -168,7 +168,18 @@ public class NoticeController {
 		}
 	}
 
-	// 공지 삭제
+	/**
+	 * 📍 공지 상태 변경(삭제) API
+	 * - 특정 공지의 상태를 '삭제됨'으로 변경한다. (소프트 삭제)
+	 * - 공지 작성자 또는 관리자만 상태를 변경할 수 있다.
+	 *
+	 * - 요청 방식: PATCH
+	 * - 요청 경로: /api/notice/{id}/status
+	 *
+	 * @param id      상태를 변경할 공지의 ID
+	 * @param request JWT 토큰 추출을 위한 HttpServletRequest
+	 * @return 200 OK, 삭제 처리된 공지의 ID와 성공 메시지
+	 */
 	@PatchMapping("/{id}/status")
 	public ResponseEntity<DeleteNoticeResponseDto> deleteNotice(
 		@PathVariable Long id,

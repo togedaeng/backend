@@ -12,12 +12,12 @@ import com.ohgiraffers.togedaeng.backend.domain.notice.entity.Notice;
 
 public interface NoticeRepository extends JpaRepository<Notice, Long> {
 
-	@Query("SELECT n FROM Notice n JOIN FETCH n.user u WHERE n.status = 'ACTIVE'")
+	@Query("SELECT n FROM Notice n JOIN FETCH n.user u WHERE n.status = 'PUBLISHED'")
 	Page<Notice> findAllWithUser(Pageable pageable);
 
 	@Query("SELECT DISTINCT n FROM Notice n " +
 		"JOIN FETCH n.user u " +
 		"LEFT JOIN FETCH n.images i " +
-		"WHERE n.id = :noticeId AND n.status = 'ACTIVE'")
+		"WHERE n.id = :noticeId AND n.status = 'PUBLISHED'")
 	Optional<Notice> findNoticeDetailsById(@Param("noticeId") Long noticeId);
 }

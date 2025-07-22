@@ -33,7 +33,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers("/auth/**", "/oauth/callback/**", "/signup").permitAll()
 				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // OPTIONS 요청은 모두 허용
-				.requestMatchers("/inquiry/**", "/notice/**", "/user/me").hasAnyRole("USER", "ADMIN")
+				.requestMatchers("/api/inquiry/**", "/api/notice/**", "/user/me").hasAnyRole("USER", "ADMIN")
 				.anyRequest().hasRole("ADMIN")
 			)
 			.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -45,7 +45,7 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration config = new CorsConfiguration();
 		config.setAllowedOrigins(List.of(frontendUrl)); // 환경변수 사용
-		config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		config.setAllowedHeaders(List.of("*"));
 		config.setAllowCredentials(true);
 
