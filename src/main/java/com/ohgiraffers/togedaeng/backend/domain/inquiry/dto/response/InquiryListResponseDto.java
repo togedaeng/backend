@@ -1,4 +1,4 @@
-package com.ohgiraffers.togedaeng.backend.domain.inquiry.dto;
+package com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.response;
 
 import java.time.LocalDateTime;
 
@@ -6,7 +6,6 @@ import com.ohgiraffers.togedaeng.backend.domain.inquiry.entity.Category;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.entity.Inquiry;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.entity.Status;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
