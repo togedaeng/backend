@@ -57,8 +57,7 @@ public class NoticeService {
 	public List<NoticeListResponseDto> getAllNotices(int page, int size) {
 		log.info("🔍 공지 전체 조회 서비스 시작 - page: {}, size: {}", page, size);
 		Pageable pageable = PageRequest.of(page, size);
-		// findAllWithUser -> findAll 로 변경해도 N+1이 발생하지 않도록 Notice 엔티티의 User fetch 전략을 EAGER로 하거나,
-		// 혹은 findAllWithUser를 유지하여 명시적으로 함께 조회합니다.
+
 		Page<Notice> noticesPage = noticeRepository.findAllWithUser(pageable);
 
 		return noticesPage.getContent().stream()
