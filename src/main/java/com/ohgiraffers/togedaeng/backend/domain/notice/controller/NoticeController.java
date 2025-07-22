@@ -59,6 +59,7 @@ public class NoticeController {
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "8") int size) {
 		log.info("🔍 공지 전체 조회 요청 - page: {}, size: {}", page, size);
+
 		List<NoticeListResponseDto> result = noticeService.getAllNotices(page, size);
 		log.info("✅ 공지 전체 조회 성공 - count: {}", result.size());
 		return ResponseEntity.ok(result);
@@ -77,6 +78,7 @@ public class NoticeController {
 	@GetMapping("/{id}")
 	public ResponseEntity<NoticeDetailResponseDto> getNoticeById(@PathVariable Long id) {
 		log.info("🔍 공지 단일 상세 조회 요청 - noticeId: {}", id);
+
 		try {
 			NoticeDetailResponseDto result = noticeService.getNoticeById(id);
 			log.info("✅ 공지 단일 상세 조회 성공 - noticeId: {}", id);
