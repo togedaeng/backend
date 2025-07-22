@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.ohgiraffers.togedaeng.backend.domain.custom.service.S3Uploader;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.request.CreateNoticeRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.notice.dto.request.NoticeImageDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.request.UpdateNoticeRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.CreateNoticeResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.response.DeleteNoticeResponseDto;
@@ -89,8 +90,8 @@ public class NoticeService {
 			.orElseThrow(() -> new IllegalArgumentException("해당 공지를 찾을 수 없습니다. id: " + noticeId));
 
 		// 이미지 URL 리스트 추출
-		List<String> imageUrls = notice.getImages().stream()
-			.map(NoticeImage::getImageUrl)
+		List<NoticeImageDto> imageDtoList = notice.getImages().stream()
+			.map(image -> new NoticeImageDto(image.getId(), image.getImageUrl())) // 👈 ID와 URL로 DTO 생성
 			.collect(Collectors.toList());
 
 		return new NoticeDetailResponseDto(
@@ -99,7 +100,7 @@ public class NoticeService {
 			notice.getTitle(),
 			notice.getContent(),
 			notice.getUser().getNickname(),
-			imageUrls,
+			imageDtoList,
 			notice.getCreatedAt(),
 			notice.getUpdatedAt()
 		);
