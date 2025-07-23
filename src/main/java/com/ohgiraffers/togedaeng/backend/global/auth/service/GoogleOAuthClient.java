@@ -22,11 +22,16 @@ public class GoogleOAuthClient implements OAuthClient {
 
 	private static final Logger log = LoggerFactory.getLogger(GoogleOAuthClient.class);
 
-	@Value("${oauth.google.client-id}")
-	private String clientId;
+	@Value("${oauth.google.web.client-id}")
+	private String webClientId;
 
-	@Value("${oauth.google.client-secret}")
-	private String clientSecret;
+	@Value("${oauth.google.web.client-secret}")
+	private String webClientSecret;
+
+	@Value("${oauth.google.android.client-id}")
+	private String androidClientId;
+	@Value("${oauth.google.android.client-secret}")
+	private String androidClientSecret;
 
 	private final RestTemplate restTemplate = new RestTemplate();
 	private final ObjectMapper objectMapper = new ObjectMapper();
@@ -51,15 +56,16 @@ public class GoogleOAuthClient implements OAuthClient {
 	@Override
 	public OAuthUserInfo getUserInfo(String code, String redirectUri) {
 		log.info("Google OAuth getUserInfo called - code: {}, redirectUri: {}", code, redirectUri);
-		log.info("Client ID: {}", clientId);
-		log.info("Client Secret: {}", clientSecret != null ? "***" : "NULL");
-		
+
+		boolean isAndroid = redirectUri != null && redirectUri.startsWith("com.googleusercontent.apps");
+		String clientIdToUse = isAndroid ? androidClientId : webClientId;
+		String clientSecretToUse = isAndroid ? androidClientSecret : webClientSecret;
+
+		log.info("Using {} credentials", isAndroid ? "Android" : "Web");
+		log.debug("ClientId: {}", clientIdToUse);
+
 		try {
-			// 1. authorization code로 access token 요청
-			String accessToken = getAccessToken(code, redirectUri);
-			log.info("Access token obtained successfully");
-			
-			// 2. access token으로 사용자 정보 요청
+			String accessToken = getAccessToken(code, redirectUri, clientIdToUse, clientSecretToUse);
 			return getUserInfoFromGoogle(accessToken);
 		} catch (Exception e) {
 			log.error("Google OAuth error", e);
@@ -67,8 +73,8 @@ public class GoogleOAuthClient implements OAuthClient {
 		}
 	}
 
-	private String getAccessToken(String code, String redirectUri) {
-		log.info("Requesting access token from Google OAuth API");
+	private String getAccessToken(String code, String redirectUri, String clientId, String clientSecret) throws Exception {
+		log.info("Google OAuth API에 access token 요청");
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
