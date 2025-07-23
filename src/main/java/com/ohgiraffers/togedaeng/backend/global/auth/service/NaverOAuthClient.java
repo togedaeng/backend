@@ -45,6 +45,10 @@ public class NaverOAuthClient implements OAuthClient {
 	}
 
 	@Override
+	public OAuthUserInfo getUserInfo(String code, String redirectUri, String codeVerifier) {
+		return null;
+	}
+
 	public OAuthUserInfo getUserInfo(String code, String redirectUri) {
 		try {
 			// 1. authorization code로 access token 요청

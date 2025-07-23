@@ -62,7 +62,8 @@ public class AuthController {
 
 		try {
 			// 1. authorization code로 사용자 정보 가져오기
-			OAuthUserInfo userInfo = oAuthService.getUserInfo(provider, request.getCode(), request.getRedirectUri());
+			OAuthUserInfo userInfo = oAuthService.getUserInfo(provider, request.getCode(), request.getRedirectUri(),
+				request.getCodeVerifier());
 
 			// 2. 기존 회원인지 확인
 			boolean isRegistered = oAuthService.isUserRegistered(userInfo.getProviderId(), provider);
