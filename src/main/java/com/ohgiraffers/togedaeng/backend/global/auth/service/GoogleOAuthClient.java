@@ -59,6 +59,7 @@ public class GoogleOAuthClient implements OAuthClient {
 
 		boolean isAndroid = redirectUri != null && redirectUri.startsWith("com.googleusercontent.apps");
 		log.info("Using {} credentials", isAndroid ? "Android (PKCE)" : "Web (client_secret)");
+		log.info("codeVerifier: {}", codeVerifier);
 
 		String accessToken;
 		try {
@@ -124,59 +125,6 @@ public class GoogleOAuthClient implements OAuthClient {
 			throw new RuntimeException(e);
 		}
 		return json.get("access_token").asText();
-	}
-
-	private String getAccessToken(String code, String redirectUri, String clientId, String clientSecret, String codeVerifier, boolean isAndroid) throws Exception {
-		log.info("Google OAuth API에 access token 요청");
-		
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-		MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-		params.add("grant_type", "authorization_code");
-		params.add("client_id", clientId);
-		params.add("code", code);
-		params.add("redirect_uri", redirectUri);
-
-		if (isAndroid) {
-			params.add("code_verifier", codeVerifier);
-		} else {
-			params.add("client_secret", clientSecret);
-		}
-
-		log.info("Token request params - grant_type: authorization_code, client_id: {}, redirect_uri: {}", clientId, redirectUri);
-		log.info("Full request params: {}", params);
-
-		HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
-
-		try {
-			ResponseEntity<String> response = restTemplate.exchange(
-				"https://oauth2.googleapis.com/token",
-				HttpMethod.POST,
-				request,
-				String.class
-			);
-
-			log.info("Google OAuth API response status: {}", response.getStatusCode());
-			log.info("Google OAuth API response body: {}", response.getBody());
-
-			JsonNode jsonNode = objectMapper.readTree(response.getBody());
-			String accessToken = jsonNode.get("access_token").asText();
-			log.info("Access token extracted successfully");
-			return accessToken;
-			
-		} catch (Exception e) {
-			log.error("Failed to get access token from Google OAuth API", e);
-			
-			// 에러 응답 본문도 로깅
-			if (e instanceof org.springframework.web.client.HttpClientErrorException) {
-				org.springframework.web.client.HttpClientErrorException httpEx = 
-					(org.springframework.web.client.HttpClientErrorException) e;
-				log.error("HTTP Error Response Body: {}", httpEx.getResponseBodyAsString());
-			}
-			
-			throw new RuntimeException("Access token 요청 실패", e);
-		}
 	}
 
 	private OAuthUserInfo getUserInfoFromGoogle(String accessToken) {
