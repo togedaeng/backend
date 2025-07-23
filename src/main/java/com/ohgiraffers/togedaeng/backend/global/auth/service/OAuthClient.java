@@ -9,5 +9,5 @@ public interface OAuthClient {
 
 	String getEmail();
 
-	OAuthUserInfo getUserInfo(String code, String redirectUri);
+	OAuthUserInfo getUserInfo(String code, String redirectUri, String codeVerifier);
 }
