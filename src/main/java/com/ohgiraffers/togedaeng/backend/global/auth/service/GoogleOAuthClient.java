@@ -13,8 +13,10 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ohgiraffers.togedaeng.backend.global.auth.dto.AuthorizationCodeRequest;
 import com.ohgiraffers.togedaeng.backend.global.auth.dto.OAuthUserInfo;
 
 @Service("google")
@@ -22,11 +24,14 @@ public class GoogleOAuthClient implements OAuthClient {
 
 	private static final Logger log = LoggerFactory.getLogger(GoogleOAuthClient.class);
 
-	@Value("${oauth.google.client-id}")
-	private String clientId;
+	@Value("${oauth.google.web.client-id}")
+	private String webClientId;
 
-	@Value("${oauth.google.client-secret}")
-	private String clientSecret;
+	@Value("${oauth.google.web.client-secret}")
+	private String webClientSecret;
+
+	@Value("${oauth.google.android.client-id}")
+	private String androidClientId;
 
 	private final RestTemplate restTemplate = new RestTemplate();
 	private final ObjectMapper objectMapper = new ObjectMapper();
@@ -49,17 +54,23 @@ public class GoogleOAuthClient implements OAuthClient {
 	}
 
 	@Override
-	public OAuthUserInfo getUserInfo(String code, String redirectUri) {
+	public OAuthUserInfo getUserInfo(String code, String redirectUri, String codeVerifier) {
 		log.info("Google OAuth getUserInfo called - code: {}, redirectUri: {}", code, redirectUri);
-		log.info("Client ID: {}", clientId);
-		log.info("Client Secret: {}", clientSecret != null ? "***" : "NULL");
-		
+
+		boolean isAndroid = redirectUri != null && redirectUri.startsWith("com.googleusercontent.apps");
+		log.info("Using {} credentials", isAndroid ? "Android (PKCE)" : "Web (client_secret)");
+		log.info("codeVerifier: {}", codeVerifier);
+
+		String accessToken;
 		try {
-			// 1. authorization code로 access token 요청
-			String accessToken = getAccessToken(code, redirectUri);
-			log.info("Access token obtained successfully");
-			
-			// 2. access token으로 사용자 정보 요청
+			if (isAndroid) {
+				// PKCE 흐름
+				accessToken = getAccessTokenWithPKCE(code, redirectUri, androidClientId, codeVerifier);
+			} else {
+				// client_secret 흐름
+				accessToken = getAccessTokenWithSecret(code, redirectUri, webClientId, webClientSecret);
+			}
+
 			return getUserInfoFromGoogle(accessToken);
 		} catch (Exception e) {
 			log.error("Google OAuth error", e);
@@ -67,52 +78,53 @@ public class GoogleOAuthClient implements OAuthClient {
 		}
 	}
 
-	private String getAccessToken(String code, String redirectUri) {
-		log.info("Requesting access token from Google OAuth API");
-		
+	private String getAccessTokenWithSecret(String code,
+		String redirectUri,
+		String clientId,
+		String clientSecret) {
+		MultiValueMap<String,String> params = new LinkedMultiValueMap<>();
+		params.add("grant_type",    "authorization_code");
+		params.add("client_id",     clientId);
+		params.add("client_secret", clientSecret);
+		params.add("code",          code);
+		params.add("redirect_uri",  redirectUri);
+
+		return requestToken(params);
+	}
+
+	private String getAccessTokenWithPKCE(String code,
+		String redirectUri,
+		String clientId,
+		String codeVerifier) {
+		MultiValueMap<String,String> params = new LinkedMultiValueMap<>();
+		params.add("grant_type",    "authorization_code");
+		params.add("client_id",     clientId);
+		params.add("code",          code);
+		params.add("redirect_uri",  redirectUri);
+		params.add("code_verifier", codeVerifier);
+
+		return requestToken(params);
+	}
+
+	private String requestToken(MultiValueMap<String,String> params) {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-		MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-		params.add("grant_type", "authorization_code");
-		params.add("client_id", clientId);
-		params.add("client_secret", clientSecret);
-		params.add("code", code);
-		params.add("redirect_uri", redirectUri);
+		HttpEntity<MultiValueMap<String,String>> request = new HttpEntity<>(params, headers);
+		ResponseEntity<String> resp = restTemplate.exchange(
+			"https://oauth2.googleapis.com/token",
+			HttpMethod.POST,
+			request,
+			String.class
+		);
 
-		log.info("Token request params - grant_type: authorization_code, client_id: {}, redirect_uri: {}", clientId, redirectUri);
-		log.info("Full request params: {}", params);
-
-		HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
-
+		JsonNode json = null;
 		try {
-			ResponseEntity<String> response = restTemplate.exchange(
-				"https://oauth2.googleapis.com/token",
-				HttpMethod.POST,
-				request,
-				String.class
-			);
-
-			log.info("Google OAuth API response status: {}", response.getStatusCode());
-			log.info("Google OAuth API response body: {}", response.getBody());
-
-			JsonNode jsonNode = objectMapper.readTree(response.getBody());
-			String accessToken = jsonNode.get("access_token").asText();
-			log.info("Access token extracted successfully");
-			return accessToken;
-			
-		} catch (Exception e) {
-			log.error("Failed to get access token from Google OAuth API", e);
-			
-			// 에러 응답 본문도 로깅
-			if (e instanceof org.springframework.web.client.HttpClientErrorException) {
-				org.springframework.web.client.HttpClientErrorException httpEx = 
-					(org.springframework.web.client.HttpClientErrorException) e;
-				log.error("HTTP Error Response Body: {}", httpEx.getResponseBodyAsString());
-			}
-			
-			throw new RuntimeException("Access token 요청 실패", e);
+			json = objectMapper.readTree(resp.getBody());
+		} catch (JsonProcessingException e) {
+			throw new RuntimeException(e);
 		}
+		return json.get("access_token").asText();
 	}
 
 	private OAuthUserInfo getUserInfoFromGoogle(String accessToken) {

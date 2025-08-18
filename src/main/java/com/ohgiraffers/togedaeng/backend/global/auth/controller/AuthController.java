@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserInfoRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.User;
 import com.ohgiraffers.togedaeng.backend.domain.user.repository.UserRepository;
+import com.ohgiraffers.togedaeng.backend.global.auth.dto.AccessTokenResponseDto;
 import com.ohgiraffers.togedaeng.backend.global.auth.dto.AuthResponseDto;
 import com.ohgiraffers.togedaeng.backend.global.auth.dto.AuthorizationCodeRequest;
 import com.ohgiraffers.togedaeng.backend.global.auth.dto.OAuthUserInfo;
@@ -27,6 +29,9 @@ import com.ohgiraffers.togedaeng.backend.global.auth.dto.RefreshTokenRequest;
 import com.ohgiraffers.togedaeng.backend.global.auth.dto.TokenResponseDto;
 import com.ohgiraffers.togedaeng.backend.global.auth.service.JwtProvider;
 import com.ohgiraffers.togedaeng.backend.global.auth.service.OAuthService;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 
 // 프론트에서 로그인 후 받은 인가토큰을 넘겨받음
 @RestController
@@ -56,13 +61,17 @@ public class AuthController {
 	 */
 	@PostMapping("/oauth/{provider}")
 	public ResponseEntity<?> socialLogin(@PathVariable("provider") String provider,
-		@RequestBody AuthorizationCodeRequest request) {
+		@RequestBody AuthorizationCodeRequest request, HttpServletResponse response,
+		@RequestHeader(value = "X-Client-Type") String clientType) { // 헤더에서 web인지 android인지 구분
 
 		log.info("OAuth 로그인 요청 - 플랫폼: {}, code: {}", provider, request.getCode());
 
 		try {
+			System.out.println("로그인 시작");
 			// 1. authorization code로 사용자 정보 가져오기
-			OAuthUserInfo userInfo = oAuthService.getUserInfo(provider, request.getCode(), request.getRedirectUri());
+			System.out.println("codeVerifier: "+request.getCodeVerifier());
+			OAuthUserInfo userInfo = oAuthService.getUserInfo(provider, request.getCode(), request.getRedirectUri(),
+				request.getCodeVerifier());
 
 			// 2. 기존 회원인지 확인
 			boolean isRegistered = oAuthService.isUserRegistered(userInfo.getProviderId(), provider);
@@ -71,7 +80,20 @@ public class AuthController {
 				// 기존 회원이면 JWT 발급
 				TokenResponseDto token = oAuthService.login(userInfo.getProviderId(), provider);
 				log.info("Existing user login successful - providerId: {}", userInfo.getProviderId());
-				return ResponseEntity.ok(token);
+
+				if ("android".equalsIgnoreCase(clientType)) { // 앱으로 로그인 했을때
+					return ResponseEntity.ok(token);
+				} else {
+					Cookie refreshCookie = new Cookie("refreshToken", token.getRefreshToken());
+					refreshCookie.setHttpOnly(true);
+					refreshCookie.setSecure(true);
+					refreshCookie.setPath("/");
+					refreshCookie.setMaxAge(60 * 60 * 24 * 7); // 7일
+					response.addCookie(refreshCookie);
+
+					AccessTokenResponseDto body = new AccessTokenResponseDto(token.getAccessToken());
+					return ResponseEntity.ok(body);
+				}
 			} else {
 				// 신규 회원은 추가정보 입력하게
 				log.info("New user requires additional info - email: {}, provider: {}", userInfo.getEmail(), provider);

@@ -37,11 +37,11 @@ public class OAuthService {
 	}
 
 	// 소셜로그인 시도한 클라이언트의 플랫폼, 코드, uri 가져옴
-	public OAuthUserInfo getUserInfo(String provider, String code, String redirectUri) {
+	public OAuthUserInfo getUserInfo(String provider, String code, String redirectUri, String codeVerifier) {
 		if ("google".equalsIgnoreCase(provider)) {
-			return googleOAuthClient.getUserInfo(code, redirectUri);
+			return googleOAuthClient.getUserInfo(code, redirectUri, codeVerifier);
 		} else if ("naver".equalsIgnoreCase(provider)) {
-			return naverOAuthClient.getUserInfo(code, redirectUri);
+			return naverOAuthClient.getUserInfo(code, redirectUri, codeVerifier);
 		} else {
 			throw new IllegalArgumentException("지원하지 않는 provider: " + provider);
 		}

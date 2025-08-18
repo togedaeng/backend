@@ -4,13 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
-@Setter
-@NoArgsConstructor
 @AllArgsConstructor
-public class AuthorizationCodeRequest {
-	private String code;
-	private String redirectUri;
-	private String codeVerifier;
+@NoArgsConstructor
+public class AccessTokenResponseDto {
+	private String accessToken;
 }
