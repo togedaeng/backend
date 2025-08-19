@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.ohgiraffers.togedaeng.backend.domain.custom.service.S3Uploader;
+import com.ohgiraffers.togedaeng.backend.domain.custom.service.FileUploadService;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.controller.InquiryController;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.CreateInquiryAnswerRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.CreateInquiryRequestDto;
@@ -45,7 +45,7 @@ public class InquiryService {
 	private final InquiryRepository inquiryRepository;
 	private final InquiryAnswerRepository inquiryAnswerRepository;
 	private final UserRepository userRepository;
-	private final S3Uploader s3Uploader;
+	private final FileUploadService fileUploadService;
 
 	/**
 	 * 📍 문의 전체 조회 서비스
@@ -64,8 +64,8 @@ public class InquiryService {
 		Page<Inquiry> inquiriesPage = inquiryRepository.findAllWithUser(pageable);
 
 		return inquiriesPage.getContent().stream()
-			.map(InquiryListResponseDto::from)
-			.collect(Collectors.toList());
+				.map(InquiryListResponseDto::from)
+				.collect(Collectors.toList());
 	}
 
 	/**
@@ -82,7 +82,7 @@ public class InquiryService {
 		log.info("🔍 문의 단일 상세 조회 서비스 시작 - inquiryId: {}", inquiryId);
 
 		Inquiry inquiry = inquiryRepository.findInquiryDetailsById(inquiryId)
-			.orElseThrow(() -> new IllegalArgumentException("해당 문의를 찾을 수 없습니다. id: " + inquiryId));
+				.orElseThrow(() -> new IllegalArgumentException("해당 문의를 찾을 수 없습니다. id: " + inquiryId));
 
 		log.info("✅ 문의 단일 상세 조회 서비스 성공 - inquiryId: {}", inquiryId);
 		return InquiryDetailResponseDto.from(inquiry);
@@ -98,26 +98,27 @@ public class InquiryService {
 	 * @return 작성된 문의의 상세 정보
 	 */
 	@Transactional
-	public CreateInquiryResponseDto createInquiry(CreateInquiryRequestDto requestDto, List<MultipartFile> images, Long userId) {
+	public CreateInquiryResponseDto createInquiry(CreateInquiryRequestDto requestDto, List<MultipartFile> images,
+			Long userId) {
 		log.info("🚀 [문의 등록] 서비스 시작 - userId: {}", userId);
 
 		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. id: " + userId));
+				.orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. id: " + userId));
 
 		Inquiry newInquiry = Inquiry.builder()
-			.user(user)
-			.category(requestDto.getCategory())
-			.title(requestDto.getTitle())
-			.content(requestDto.getContent())
-			.status(Status.WAITING) // 초기 상태는 WAITING
-			.createdAt(LocalDateTime.now())
-			.images(new ArrayList<>()) // images 리스트 초기화
-			.build();
+				.user(user)
+				.category(requestDto.getCategory())
+				.title(requestDto.getTitle())
+				.content(requestDto.getContent())
+				.status(Status.WAITING) // 초기 상태는 WAITING
+				.createdAt(LocalDateTime.now())
+				.images(new ArrayList<>()) // images 리스트 초기화
+				.build();
 
 		if (images != null && !images.isEmpty()) {
 			for (MultipartFile image : images) {
 				try {
-					String imageUrl = s3Uploader.upload(image, "inquiries"); // S3 'inquiries' 폴더에 저장
+					String imageUrl = fileUploadService.upload(image, "inquiries"); // 로컬 'inquiries' 폴더에 저장
 					InquiryImage inquiryImage = new InquiryImage(null, null, imageUrl);
 					newInquiry.addImage(inquiryImage); // 연관관계 편의 메소드 사용
 				} catch (IOException e) {
@@ -147,11 +148,12 @@ public class InquiryService {
 	 * @throws IllegalStateException 답변이 이미 달렸거나 삭제된 경우
 	 */
 	@Transactional
-	public InquiryDetailResponseDto updateInquiry(Long inquiryId, UpdateInquiryRequestDto requestDto, List<MultipartFile> newImages, Long userId) {
+	public InquiryDetailResponseDto updateInquiry(Long inquiryId, UpdateInquiryRequestDto requestDto,
+			List<MultipartFile> newImages, Long userId) {
 		log.info("🚀 [문의 수정] 서비스 시작 - inquiryId: {}, userId: {}", inquiryId, userId);
 
 		Inquiry inquiry = inquiryRepository.findInquiryDetailsById(inquiryId)
-			.orElseThrow(() -> new IllegalArgumentException("수정할 문의를 찾을 수 없습니다. id: " + inquiryId));
+				.orElseThrow(() -> new IllegalArgumentException("수정할 문의를 찾을 수 없습니다. id: " + inquiryId));
 
 		// 1. 권한 검증: 작성자 본인 확인
 		if (!inquiry.getUser().getId().equals(userId)) {
@@ -168,11 +170,11 @@ public class InquiryService {
 		// 3. 기존 이미지 삭제 처리
 		if (requestDto.getDeleteImageIds() != null && !requestDto.getDeleteImageIds().isEmpty()) {
 			List<InquiryImage> imagesToRemove = inquiry.getImages().stream()
-				.filter(image -> requestDto.getDeleteImageIds().contains(image.getId()))
-				.collect(Collectors.toList());
+					.filter(image -> requestDto.getDeleteImageIds().contains(image.getId()))
+					.collect(Collectors.toList());
 
 			for (InquiryImage image : imagesToRemove) {
-				s3Uploader.delete(image.getImageUrl()); // S3에서 파일 삭제
+				fileUploadService.delete(image.getImageUrl()); // 로컬에서 파일 삭제
 				inquiry.getImages().remove(image); // 컬렉션에서 제거 (orphanRemoval=true로 DB에서도 삭제됨)
 			}
 			log.info("🖼️ 기존 문의 이미지 {}개 삭제 성공", imagesToRemove.size());
@@ -182,7 +184,7 @@ public class InquiryService {
 		if (newImages != null && !newImages.isEmpty()) {
 			for (MultipartFile image : newImages) {
 				try {
-					String imageUrl = s3Uploader.upload(image, "inquiries");
+					String imageUrl = fileUploadService.upload(image, "inquiries");
 					inquiry.addImage(new InquiryImage(null, null, imageUrl));
 				} catch (IOException e) {
 					throw new RuntimeException("새 이미지 업로드에 실패했습니다.");
@@ -193,10 +195,9 @@ public class InquiryService {
 
 		// 5. 문의 내용 업데이트
 		inquiry.update(
-			requestDto.getCategory(),
-			requestDto.getTitle(),
-			requestDto.getContent()
-		);
+				requestDto.getCategory(),
+				requestDto.getTitle(),
+				requestDto.getContent());
 
 		inquiryRepository.save(inquiry);
 
@@ -210,11 +211,11 @@ public class InquiryService {
 	 * - 특정 문의에 대한 답변을 작성하고, 문의의 상태를 'ANSWERED'로 변경한다.
 	 * - 답변은 관리자만 작성할 수 있다.
 	 *
-	 * @param inquiryId 답변을 달 문의 ID
+	 * @param inquiryId  답변을 달 문의 ID
 	 * @param requestDto 답변 내용
-	 * @param adminId 답변을 작성하는 관리자 ID
+	 * @param adminId    답변을 작성하는 관리자 ID
 	 * @return 작성된 답변 정보 DTO
-	 * @throws IllegalStateException 이미 답변이 달린 경우 발생
+	 * @throws IllegalStateException    이미 답변이 달린 경우 발생
 	 * @throws IllegalArgumentException 문의 또는 관리자 ID가 유효하지 않을 경우 발생
 	 */
 	@Transactional
@@ -222,7 +223,7 @@ public class InquiryService {
 		log.info("🚀 [답변 등록] 서비스 시작 - inquiryId: {}, adminId: {}", inquiryId, adminId);
 
 		Inquiry inquiry = inquiryRepository.findById(inquiryId)
-			.orElseThrow(() -> new IllegalArgumentException("답변할 문의를 찾을 수 없습니다. id: " + inquiryId));
+				.orElseThrow(() -> new IllegalArgumentException("답변할 문의를 찾을 수 없습니다. id: " + inquiryId));
 
 		// 이미 답변이 달렸거나 삭제된 문의인지 확인
 		if (inquiry.getStatus() != Status.WAITING) {
@@ -230,14 +231,14 @@ public class InquiryService {
 		}
 
 		User admin = userRepository.findById(adminId)
-			.orElseThrow(() -> new IllegalArgumentException("관리자 정보를 찾을 수 없습니다. id: " + adminId));
+				.orElseThrow(() -> new IllegalArgumentException("관리자 정보를 찾을 수 없습니다. id: " + adminId));
 
 		InquiryAnswer newAnswer = InquiryAnswer.builder()
-			.inquiry(inquiry)
-			.user(admin)
-			.comment(requestDto.getComment())
-			.createdAt(LocalDateTime.now())
-			.build();
+				.inquiry(inquiry)
+				.user(admin)
+				.comment(requestDto.getComment())
+				.createdAt(LocalDateTime.now())
+				.build();
 
 		InquiryAnswer savedAnswer = inquiryAnswerRepository.save(newAnswer);
 
