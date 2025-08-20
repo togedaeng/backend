@@ -1,0 +1,8 @@
+spring:
+  cloud:
+    config:
+      fail-fast: true
+      retry:
+        initial-interval: 3000  # 첫 재시도 전 3초 대기
+        max-attempts: 10        # 최대 10번 재시도
+        multiplier: 1.5         # 재시도할 때마다 대기 시간 1.5배씩 증가
