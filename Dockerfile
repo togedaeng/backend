@@ -6,6 +6,7 @@ FROM gradle:8.5-jdk17-jammy AS build
 WORKDIR /home/gradle/src
 
 # 소스 코드를 복사합니다.
+# 이 시점에 프로젝트 루트의 firebase-service-account-key.json도 함께 복사됩니다.
 COPY --chown=gradle:gradle . .
 
 # Gradle을 실행하여 Jar 파일을 빌드하되, 테스트는 건너뜁니다 (-x test 추가).
@@ -22,6 +23,9 @@ WORKDIR /app
 
 # 1단계(build)에서 생성된 JAR 파일을 2단계 이미지로 복사합니다.
 COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
+
+# 1단계(build) 스테이지에 있던 키 파일을 최종 이미지의 /app 경로로 복사합니다.
+COPY --from=build /home/gradle/src/firebase-service-account-key.json /app/firebase-service-account-key.json
 
 # 컨테이너가 시작될 때 Jar 파일을 실행합니다.
 ENTRYPOINT ["java", "-jar", "app.jar"]
