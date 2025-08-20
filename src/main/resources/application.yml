@@ -8,10 +8,10 @@ spring:
   profiles:
     active: dev
   # Config Server 설정을 주석 처리하거나 제거
-  # config:
-  #   import: "configserver:https://config-server-f6jk.onrender.com"
-  cloud:
-    config:
+config:
+ import: "configserver:https://config-server-f6jk.onrender.com"
+cloud:
+  config:
+    enabled: false
+    import-check:
       enabled: false
-      import-check:
-        enabled: false
