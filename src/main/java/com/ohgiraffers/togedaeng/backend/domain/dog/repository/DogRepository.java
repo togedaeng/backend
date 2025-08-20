@@ -18,4 +18,13 @@ public interface DogRepository extends JpaRepository<Dog, Long> {
     AND d.deletedAt IS NULL
 """)
 	List<Dog> findAllByUserId(@Param("userId") Long userId);
+
+    @Query("""
+    SELECT d
+    FROM Dog d
+    JOIN DogOwner o ON d.id = o.dogId
+    WHERE o.userId = :userId
+    AND d.deletedAt IS NULL
+""")
+    List<Dog> findByUserId(Long userId);
 }
