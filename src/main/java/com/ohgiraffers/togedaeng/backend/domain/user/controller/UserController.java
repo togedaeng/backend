@@ -10,11 +10,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.DeleteUserResponseDto;
+import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.FcmTokenRequestDto;
+import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.FcmTokenResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserNicknameUpdateDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserWithDogResponseDto;
@@ -142,5 +145,28 @@ public class UserController {
 		log.info("Delete user: {}", id);
 		DeleteUserResponseDto user = userService.deleteUser(id);
 		return new ResponseEntity<>(user, HttpStatus.OK);
+	}
+
+	/**
+	 * 📍 푸시 알림 토큰 등록
+	 * @param fcmTokenRequestDto 토큰 요청 DTO
+	 * @param request HTTP 요청 (JWT 토큰 추출용)
+	 * @return 등록 결과 DTO
+	 */
+	@PostMapping("/fcm-token")
+	public ResponseEntity<FcmTokenResponseDto> registerFcmToken(
+		@RequestBody FcmTokenRequestDto fcmTokenRequestDto, HttpServletRequest request) {
+		log.info("Register FCM token: {}", fcmTokenRequestDto.getFcmToken());
+
+		try {
+			// Authorization 헤더에서 Bearer 토큰 추출
+			String authHeader = request.getHeader("Authorization");
+			log.info("Authorization header: {}", authHeader);
+		} catch (Exception e) {
+			log.error("Error registering FCM token", e);
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		}
+
+		return new ResponseEntity<>(HttpStatus.OK);
 	}
 }

@@ -15,7 +15,7 @@ public interface DogOwnerRepository extends JpaRepository<DogOwner, Long> {
 
 	Optional<DogOwner> findFirstByDogId(Long dogId);
 
-	List<DogOwner> findByDogId(Long dogId);
+	Optional<DogOwner> findByDogId(Long dogId);
 
 	@Query("SELECT o.dogId FROM DogOwner o WHERE o.userId = :userId")
 	Long findDogIdByUserId(Long userId); // userId로 dogId찾기
