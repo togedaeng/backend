@@ -3,9 +3,7 @@ package com.ohgiraffers.togedaeng.backend.domain.dog.entity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.ohgiraffers.togedaeng.backend.domain.personality.entity.PersonalityCombination;
-
-import jakarta.persistence.CascadeType;
+ 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,8 +11,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+ 
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -50,8 +47,9 @@ public class Dog {
 	@Enumerated(EnumType.STRING)
 	private Status status;
 
-	@OneToOne(mappedBy = "dog", cascade = CascadeType.ALL, orphanRemoval = true)
-	private PersonalityCombination personalityCombination;
+    // 성격 조합 ID (FK)
+    @Column(name = "personality_combo_id", nullable = false)
+    private Long personalityComboId;
 
 	// 렌더링 이미지 URL
 	@Column(name = "rendered_url")

@@ -284,18 +284,20 @@ public class CustomService {
 			List<DogImage> dogImages = dogImageRepository.findByCustomId(custom.getId());
 			List<String> dogImageUrls = dogImages.stream().map(DogImage::getImageUrl).collect(Collectors.toList());
 
-			// 성격 (dogId로 PersonalityCombination에서 id 2개를 얻고, DogPersonality에서 name 조회)
+			// 성격 (Dog의 personality_combo_id로 조합 조회 후, DogPersonality에서 name 조회)
 			List<String> personalityNames = new ArrayList<>();
-			personalityCombinationRepository.findByDogId(custom.getDogId()).ifPresent(comb -> {
-				if (comb.getPersonalityId1() != null) {
-					dogPersonalityRepository.findById(comb.getPersonalityId1())
-							.ifPresent(p -> personalityNames.add(p.getName()));
-				}
-				if (comb.getPersonalityId2() != null) {
-					dogPersonalityRepository.findById(comb.getPersonalityId2())
-							.ifPresent(p -> personalityNames.add(p.getName()));
-				}
-			});
+			if (dog != null && dog.getPersonalityComboId() != null) {
+				personalityCombinationRepository.findById(dog.getPersonalityComboId()).ifPresent(comb -> {
+					if (comb.getPersonalityId1() != null) {
+						dogPersonalityRepository.findById(comb.getPersonalityId1())
+								.ifPresent(p -> personalityNames.add(p.getName()));
+					}
+					if (comb.getPersonalityId2() != null) {
+						dogPersonalityRepository.findById(comb.getPersonalityId2())
+								.ifPresent(p -> personalityNames.add(p.getName()));
+					}
+				});
+			}
 
 			return new CustomDetailResponseDto(
 					custom.getId(),

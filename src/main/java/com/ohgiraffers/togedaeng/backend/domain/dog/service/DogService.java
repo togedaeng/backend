@@ -63,35 +63,30 @@ public class DogService {
 
 		log.info("🐶 [강아지 등록] 시작 - userId: {}", userId);
 
-		// 1. Dog 엔티티 먼저 생성 (personalityCombination 없이)
+		// 1. PersonalityCombination 생성 (성격 1개 또는 2개)
+		PersonalityCombination combination = PersonalityCombination.builder()
+			.personalityId1(dto.getPersonalityId1())
+			.personalityId2(dto.getPersonalityId2())
+			.build();
+		personalityCombinationRepository.save(combination);
+
+		// 2. Dog 엔티티 생성 (personality_combo_id 세팅 후 저장)
 		Dog dog = Dog.builder()
 			.name(dto.getName())
 			.gender(dto.getGender())
 			.birth(dto.getBirth())
 			.status(Status.REGISTERED)
 			.createdAt(LocalDateTime.now())
+			.personalityComboId(combination.getId())
 			.build();
-
 		dogRepository.save(dog);
 		log.debug("📌 강아지 저장 완료 - dogId: {}", dog.getId());
 
-		// 2. PersonalityCombination 생성 및 dog에 세팅
-		PersonalityCombination combination = PersonalityCombination.builder()
-			.dog(dog) // 연관관계 주인 설정
-			.personalityId1(dto.getPersonalityId1())
-			.personalityId2(dto.getPersonalityId2())
-			.build();
-
-		personalityCombinationRepository.save(combination);
-
-		// 3. 양방향 관계 세팅
-		dog.setPersonalityCombination(combination);
-
-		// 4. DogOwner 저장 (userId 관리)
+		// 3. DogOwner 저장 (userId 관리)
 		DogOwner owner = new DogOwner(userId, dog.getId(), dto.getCallName(), true, LocalDateTime.now());
 		dogOwnerRepository.save(owner);
 
-		// 5. 응답 DTO 생성 및 반환
+		// 4. 응답 DTO 생성 및 반환
 		CreateDogResponseDto responseDto = new CreateDogResponseDto(
 			dog.getId(),
 			userId,
@@ -173,16 +168,19 @@ public class DogService {
 			}
 
 			List<String> personalities = new ArrayList<>();
-			personalityCombinationRepository.findByDogId(dogId).ifPresent(comb -> {
-				if (comb.getPersonalityId1() != null) {
-					dogPersonalityRepository.findById(comb.getPersonalityId1())
-						.ifPresent(p -> personalities.add(p.getName()));
-				}
-				if (comb.getPersonalityId2() != null) {
-					dogPersonalityRepository.findById(comb.getPersonalityId2())
-						.ifPresent(p -> personalities.add(p.getName()));
-				}
-			});
+			Long comboId = dog.getPersonalityComboId();
+			if (comboId != null) {
+				personalityCombinationRepository.findById(comboId).ifPresent(comb -> {
+					if (comb.getPersonalityId1() != null) {
+						dogPersonalityRepository.findById(comb.getPersonalityId1())
+							.ifPresent(p -> personalities.add(p.getName()));
+					}
+					if (comb.getPersonalityId2() != null) {
+						dogPersonalityRepository.findById(comb.getPersonalityId2())
+							.ifPresent(p -> personalities.add(p.getName()));
+					}
+				});
+			}
 
 			DogDetailResponseDto result = new DogDetailResponseDto(
 				dog.getId(),

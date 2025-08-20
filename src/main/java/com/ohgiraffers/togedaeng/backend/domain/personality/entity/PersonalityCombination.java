@@ -30,11 +30,6 @@ public class PersonalityCombination {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	// 반려견 ID
-	@OneToOne
-	@JoinColumn(name = "dog_id", nullable = false, unique = true)
-	private Dog dog;
-
 	// 성격 ID 1
 	@Column(name = "personality_id_1", nullable = false)
 	private Long personalityId1;
