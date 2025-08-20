@@ -3,13 +3,7 @@ FROM gradle:8.5-jdk17-jammy AS build
 
 WORKDIR /home/gradle/src
 
-# ★★★ 추가된 부분 1: 빌드 인자를 받도록 선언 ★★★
-ARG FIREBASE_KEY_JSON
-
 COPY --chown=gradle:gradle . .
-
-# ★★★ 추가된 부분 2: 컨테이너 안에서 직접 파일 생성 ★★★
-RUN echo "${FIREBASE_KEY_JSON}" > ./src/main/resources/firebase-service-account.json
 
 RUN gradle bootJar -x test
 
@@ -22,7 +16,7 @@ WORKDIR /app
 
 COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
 
-# build 스테이지에서 생성된 파일을 복사
+# build 스테이지의 정확한 파일 경로를 지정합니다.
 COPY --from=build /home/gradle/src/src/main/resources/firebase-service-account.json /app/firebase-service-account.json
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
