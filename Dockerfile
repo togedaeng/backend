@@ -18,6 +18,6 @@ COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
 
 # ★★★ 수정된 부분 ★★★
 # build 스테이지의 정확한 파일 경로를 지정합니다.
-COPY --from=build /home/gradle/src/src/main/resources/firebase-service-account-key.json /app/firebase-service-account-key.json
+COPY --from=build /home/gradle/src/src/main/resources/firebase-service-account.json /app/firebase-service-account.json
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
