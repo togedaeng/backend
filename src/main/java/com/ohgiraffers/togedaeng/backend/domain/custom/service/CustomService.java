@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -194,9 +195,9 @@ public class CustomService {
 
 				// Owner 정보
 				String ownerNickname = null;
-				List<DogOwner> dogOwners = dogOwnerRepository.findByDogId(custom.getDogId());
-				if (!dogOwners.isEmpty()) {
-					Long ownerId = dogOwners.get(0).getUserId(); // 첫 번째 주인 기준
+				Optional<DogOwner> dogOwnerOpt = dogOwnerRepository.findByDogId(custom.getDogId());
+				if (dogOwnerOpt.isPresent()) {
+					Long ownerId = dogOwnerOpt.get().getUserId(); // 첫 번째 주인 기준
 					User owner = userRepository.findById(ownerId).orElse(null);
 					ownerNickname = (owner != null) ? owner.getNickname() : null;
 				}
@@ -258,9 +259,9 @@ public class CustomService {
 			// Owner 정보
 			String requesterEmail = null;
 			String requesterNickname = null;
-			List<DogOwner> dogOwners = dogOwnerRepository.findByDogId(custom.getDogId());
-			if (!dogOwners.isEmpty()) {
-				Long ownerId = dogOwners.get(0).getUserId(); // 대표 주인 기준
+			Optional<DogOwner> dogOwnerOpt = dogOwnerRepository.findByDogId(custom.getDogId());
+			if (dogOwnerOpt.isPresent()) {
+				Long ownerId = dogOwnerOpt.get().getUserId(); // 대표 주인 기준
 				User owner = userRepository.findById(ownerId).orElse(null);
 				if (owner != null) {
 					requesterEmail = owner.getEmail();
