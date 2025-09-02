@@ -16,7 +16,6 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ohgiraffers.togedaeng.backend.global.auth.dto.AuthorizationCodeRequest;
 import com.ohgiraffers.togedaeng.backend.global.auth.dto.OAuthUserInfo;
 
 @Service("google")
@@ -65,7 +64,7 @@ public class GoogleOAuthClient implements OAuthClient {
 		try {
 			if (isAndroid) {
 				// PKCE 흐름
-				accessToken = getAccessTokenWithPKCE(code, redirectUri, androidClientId, codeVerifier);
+				accessToken = getAccessTokenWithPKCE(code, redirectUri, androidClientId);
 			} else {
 				// client_secret 흐름
 				accessToken = getAccessTokenWithSecret(code, redirectUri, webClientId, webClientSecret);
@@ -82,35 +81,36 @@ public class GoogleOAuthClient implements OAuthClient {
 		String redirectUri,
 		String clientId,
 		String clientSecret) {
-		MultiValueMap<String,String> params = new LinkedMultiValueMap<>();
-		params.add("grant_type",    "authorization_code");
-		params.add("client_id",     clientId);
+		MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+		params.add("grant_type", "authorization_code");
+		params.add("client_id", clientId);
 		params.add("client_secret", clientSecret);
-		params.add("code",          code);
-		params.add("redirect_uri",  redirectUri);
+		params.add("code", code);
+		params.add("redirect_uri", redirectUri);
 
 		return requestToken(params);
 	}
 
 	private String getAccessTokenWithPKCE(String code,
 		String redirectUri,
-		String clientId,
-		String codeVerifier) {
-		MultiValueMap<String,String> params = new LinkedMultiValueMap<>();
-		params.add("grant_type",    "authorization_code");
-		params.add("client_id",     clientId);
-		params.add("code",          code);
-		params.add("redirect_uri",  redirectUri);
-		params.add("code_verifier", codeVerifier);
+		String clientId
+		// String codeVerifier
+	) {
+		MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+		params.add("grant_type", "authorization_code");
+		params.add("client_id", clientId);
+		params.add("code", code);
+		params.add("redirect_uri", redirectUri);
+		// params.add("code_verifier", codeVerifier);
 
 		return requestToken(params);
 	}
 
-	private String requestToken(MultiValueMap<String,String> params) {
+	private String requestToken(MultiValueMap<String, String> params) {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-		HttpEntity<MultiValueMap<String,String>> request = new HttpEntity<>(params, headers);
+		HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
 		ResponseEntity<String> resp = restTemplate.exchange(
 			"https://oauth2.googleapis.com/token",
 			HttpMethod.POST,
@@ -129,7 +129,7 @@ public class GoogleOAuthClient implements OAuthClient {
 
 	private OAuthUserInfo getUserInfoFromGoogle(String accessToken) {
 		log.info("Requesting user info from Google API");
-		
+
 		HttpHeaders headers = new HttpHeaders();
 		headers.setBearerAuth(accessToken);
 
@@ -147,19 +147,27 @@ public class GoogleOAuthClient implements OAuthClient {
 			log.info("Google User Info API response body: {}", response.getBody());
 
 			JsonNode jsonNode = objectMapper.readTree(response.getBody());
-			
+
 			final String providerId = jsonNode.get("id").asText();
 			final String email = jsonNode.get("email").asText();
-			
+
 			log.info("User info extracted - providerId: {}, email: {}", providerId, email);
-			
+
 			return new OAuthUserInfo() {
 				@Override
-				public String getProvider() { return "google"; }
+				public String getProvider() {
+					return "google";
+				}
+
 				@Override
-				public String getProviderId() { return providerId; }
+				public String getProviderId() {
+					return providerId;
+				}
+
 				@Override
-				public String getEmail() { return email; }
+				public String getEmail() {
+					return email;
+				}
 			};
 		} catch (Exception e) {
 			log.error("Failed to get user info from Google API", e);
