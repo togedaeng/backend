@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -55,7 +56,7 @@ public class CustomService {
 	Logger log = LoggerFactory.getLogger(CustomService.class);
 
 	private final CustomRepository customRepository;
-	private final S3Uploader s3Uploader;
+	private final FileUploadService fileUploadService;
 	private final DogImageRepository dogImageRepository;
 	private final DogRepository dogRepository;
 	private final HoldRepository holdRepository;
@@ -69,7 +70,7 @@ public class CustomService {
 	 * - 상태는 기본적으로 PENDING으로 저장됨
 	 * - 메인 이미지는 필수이며, 업로드된 이미지는 S3에 저장되고 DogImage 엔티티로 저장
 	 *
-	 * @param dogId 등록된 강아지의 ID
+	 * @param dogId     등록된 강아지의 ID
 	 * @param mainImage 메인 이미지 MultipartFile
 	 * @return 생성된 커스텀 요청의 ID (customId)
 	 * @throws IllegalArgumentException 메인 이미지가 없을 경우
@@ -91,7 +92,7 @@ public class CustomService {
 
 		// 2. 메인 이미지 업로드 및 저장
 		try {
-			String mainUrl = s3Uploader.upload(mainImage, "dog-images");
+			String mainUrl = fileUploadService.upload(mainImage, "dog-images");
 			dogImageRepository.save(new DogImage(null, custom.getId(), mainUrl, Type.MAIN));
 			log.debug("📷 메인 이미지 업로드 완료 - url: {}", mainUrl);
 		} catch (IOException e) {
@@ -108,7 +109,7 @@ public class CustomService {
 	 * - 서브 이미지는 최대 3장까지 허용
 	 * - 업로드된 이미지는 S3에 저장되고 각각 DogImage 엔티티로 저장
 	 *
-	 * @param customId 커스텀 요청 ID
+	 * @param customId  커스텀 요청 ID
 	 * @param subImages 서브 이미지 목록 (MultipartFile 리스트)
 	 * @throws IllegalArgumentException 서브 이미지가 3장을 초과할 경우
 	 * @throws ImageUploadException     S3 업로드에 실패한 경우
@@ -125,7 +126,7 @@ public class CustomService {
 		try {
 			if (subImages != null) {
 				for (MultipartFile sub : subImages) {
-					String subUrl = s3Uploader.upload(sub, "dog-images");
+					String subUrl = fileUploadService.upload(sub, "dog-images");
 					dogImageRepository.save(new DogImage(null, customId, subUrl, Type.SUB));
 					log.debug("📷 서브 이미지 업로드 완료 - url: {}", subUrl);
 				}
@@ -144,30 +145,28 @@ public class CustomService {
 			List<Custom> customs = customRepository.findByDogId(dogId);
 
 			return customs.stream()
-				.map(custom -> {
-					Hold hold = holdRepository.findTopByCustomIdOrderByCreatedAtDesc(custom.getId());
-					HoldSimpleDto holdDto =
-						(hold != null) ? new HoldSimpleDto(hold.getId(), hold.getCreatedAt()) : null;
+					.map(custom -> {
+						Hold hold = holdRepository.findTopByCustomIdOrderByCreatedAtDesc(custom.getId());
+						HoldSimpleDto holdDto = (hold != null) ? new HoldSimpleDto(hold.getId(), hold.getCreatedAt()) : null;
 
-					String adminNickname = null;
-					if (custom.getAdminId() != null) {
-						User admin = userRepository.findById(custom.getAdminId()).orElse(null);
-						adminNickname = (admin != null) ? admin.getNickname() : null;
-					}
+						String adminNickname = null;
+						if (custom.getAdminId() != null) {
+							User admin = userRepository.findById(custom.getAdminId()).orElse(null);
+							adminNickname = (admin != null) ? admin.getNickname() : null;
+						}
 
-					return new CustomListByDogIdResponseDto(
-						custom.getId(),
-						custom.getAdminId(),
-						adminNickname,  // ⭐ 추가
-						custom.getStatus(),
-						custom.getCreatedAt(),
-						custom.getStartedAt(),
-						custom.getCompletedAt(),
-						custom.getCanceledAt(),
-						holdDto
-					);
-				})
-				.toList();
+						return new CustomListByDogIdResponseDto(
+								custom.getId(),
+								custom.getAdminId(),
+								adminNickname, // ⭐ 추가
+								custom.getStatus(),
+								custom.getCreatedAt(),
+								custom.getStartedAt(),
+								custom.getCompletedAt(),
+								custom.getCanceledAt(),
+								holdDto);
+					})
+					.toList();
 
 		} catch (IllegalArgumentException e) {
 			log.warn("⚠️ 커스텀 요청 목록 조회 실패 (dogId: {}) - {}", dogId, e.getMessage());
@@ -196,9 +195,9 @@ public class CustomService {
 
 				// Owner 정보
 				String ownerNickname = null;
-				List<DogOwner> dogOwners = dogOwnerRepository.findByDogId(custom.getDogId());
-				if (!dogOwners.isEmpty()) {
-					Long ownerId = dogOwners.get(0).getUserId(); // 첫 번째 주인 기준
+				Optional<DogOwner> dogOwnerOpt = dogOwnerRepository.findByDogId(custom.getDogId());
+				if (dogOwnerOpt.isPresent()) {
+					Long ownerId = dogOwnerOpt.get().getUserId(); // 첫 번째 주인 기준
 					User owner = userRepository.findById(ownerId).orElse(null);
 					ownerNickname = (owner != null) ? owner.getNickname() : null;
 				}
@@ -215,17 +214,16 @@ public class CustomService {
 				LocalDateTime holdCreatedAt = (hold != null) ? hold.getCreatedAt() : null;
 
 				return new CustomListResponseDto(
-					custom.getId(),
-					dogName,
-					ownerNickname,
-					adminNickname,
-					custom.getStatus(),
-					custom.getCreatedAt(),
-					custom.getStartedAt(),
-					holdCreatedAt,
-					custom.getCompletedAt(),
-					custom.getCanceledAt()
-				);
+						custom.getId(),
+						dogName,
+						ownerNickname,
+						adminNickname,
+						custom.getStatus(),
+						custom.getCreatedAt(),
+						custom.getStartedAt(),
+						holdCreatedAt,
+						custom.getCompletedAt(),
+						custom.getCanceledAt());
 			});
 		} catch (IllegalArgumentException e) {
 			log.warn("⚠️ 커스텀 전체 조회(페이지네이션) 실패 - {}", e.getMessage());
@@ -250,7 +248,7 @@ public class CustomService {
 	public CustomDetailResponseDto getCustomById(Long customId) {
 		try {
 			Custom custom = customRepository.findById(customId)
-				.orElseThrow(() -> new IllegalArgumentException("해당 커스텀 요청이 존재하지 않습니다."));
+					.orElseThrow(() -> new IllegalArgumentException("해당 커스텀 요청이 존재하지 않습니다."));
 
 			// Dog 정보
 			Dog dog = dogRepository.findById(custom.getDogId()).orElse(null);
@@ -261,9 +259,9 @@ public class CustomService {
 			// Owner 정보
 			String requesterEmail = null;
 			String requesterNickname = null;
-			List<DogOwner> dogOwners = dogOwnerRepository.findByDogId(custom.getDogId());
-			if (!dogOwners.isEmpty()) {
-				Long ownerId = dogOwners.get(0).getUserId(); // 대표 주인 기준
+			Optional<DogOwner> dogOwnerOpt = dogOwnerRepository.findByDogId(custom.getDogId());
+			if (dogOwnerOpt.isPresent()) {
+				Long ownerId = dogOwnerOpt.get().getUserId(); // 대표 주인 기준
 				User owner = userRepository.findById(ownerId).orElse(null);
 				if (owner != null) {
 					requesterEmail = owner.getEmail();
@@ -287,36 +285,38 @@ public class CustomService {
 			List<DogImage> dogImages = dogImageRepository.findByCustomId(custom.getId());
 			List<String> dogImageUrls = dogImages.stream().map(DogImage::getImageUrl).collect(Collectors.toList());
 
-			// 성격 (dogId로 PersonalityCombination에서 id 2개를 얻고, DogPersonality에서 name 조회)
+			// 성격 (Dog의 personality_combo_id로 조합 조회 후, DogPersonality에서 name 조회)
 			List<String> personalityNames = new ArrayList<>();
-			personalityCombinationRepository.findByDogId(custom.getDogId()).ifPresent(comb -> {
-				if (comb.getPersonalityId1() != null) {
-					dogPersonalityRepository.findById(comb.getPersonalityId1())
-						.ifPresent(p -> personalityNames.add(p.getName()));
-				}
-				if (comb.getPersonalityId2() != null) {
-					dogPersonalityRepository.findById(comb.getPersonalityId2())
-						.ifPresent(p -> personalityNames.add(p.getName()));
-				}
-			});
+			if (dog != null && dog.getPersonalityComboId() != null) {
+				personalityCombinationRepository.findById(dog.getPersonalityComboId()).ifPresent(comb -> {
+					if (comb.getPersonalityId1() != null) {
+						dogPersonalityRepository.findById(comb.getPersonalityId1())
+								.ifPresent(p -> personalityNames.add(p.getName()));
+					}
+					if (comb.getPersonalityId2() != null) {
+						dogPersonalityRepository.findById(comb.getPersonalityId2())
+								.ifPresent(p -> personalityNames.add(p.getName()));
+					}
+				});
+			}
 
 			return new CustomDetailResponseDto(
-				custom.getId(),
-				custom.getStatus(),
-				requesterEmail,
-				requesterNickname,
-				adminNickname,
-				custom.getCreatedAt(),
-				custom.getStartedAt(),
-				holdCreatedAt,
-				holdReason,
-				custom.getCompletedAt(),
-				custom.getCanceledAt(),
-				dogName,
-				dogGender,
-				dogBirth,
-				personalityNames,
-				dogImageUrls);
+					custom.getId(),
+					custom.getStatus(),
+					requesterEmail,
+					requesterNickname,
+					adminNickname,
+					custom.getCreatedAt(),
+					custom.getStartedAt(),
+					holdCreatedAt,
+					holdReason,
+					custom.getCompletedAt(),
+					custom.getCanceledAt(),
+					dogName,
+					dogGender,
+					dogBirth,
+					personalityNames,
+					dogImageUrls);
 		} catch (IllegalArgumentException e) {
 			log.warn("⚠️ 커스텀 단일 상세 조회 실패 - {}", e.getMessage());
 			throw e;
@@ -340,12 +340,12 @@ public class CustomService {
 	 */
 	@Transactional
 	public UpdateCustomStatusInProgressResponseDto updateCustomStatusInProgress(Long customId,
-		UpdateCustomStatusInProgressRequestDto dto) {
+			UpdateCustomStatusInProgressRequestDto dto) {
 		Long adminId = dto.getAdminId();
 
 		// 커스텀 요청 조회
 		Custom custom = customRepository.findById(customId)
-			.orElseThrow(() -> new IllegalArgumentException("해당 커스텀 요청이 존재하지 않습니다."));
+				.orElseThrow(() -> new IllegalArgumentException("해당 커스텀 요청이 존재하지 않습니다."));
 
 		// 상태 변경 및 관리자 아이디, 시작일자 설정
 		custom.setStatus(Status.IN_PROGRESS);
@@ -355,17 +355,17 @@ public class CustomService {
 
 		// 강아지 엔티티 조회 및 상태 변경
 		Dog dog = dogRepository.findById(custom.getDogId())
-			.orElseThrow(() -> new IllegalArgumentException("해당 강아지가 존재하지 않습니다."));
+				.orElseThrow(() -> new IllegalArgumentException("해당 강아지가 존재하지 않습니다."));
 		dog.setStatus(com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status.APPROVED);
 		dogRepository.save(dog);
 
 		// 응답 DTO 생성 및 반환
 		UpdateCustomStatusInProgressResponseDto responseDto = new UpdateCustomStatusInProgressResponseDto(
-			custom.getId(),
-			custom.getDogId(),
-			custom.getAdminId(),
-			custom.getStatus(),
-			custom.getStartedAt());
+				custom.getId(),
+				custom.getDogId(),
+				custom.getAdminId(),
+				custom.getStatus(),
+				custom.getStartedAt());
 
 		return responseDto;
 	}
@@ -386,11 +386,11 @@ public class CustomService {
 	 */
 	@Transactional
 	public UpdateCustomStatusHoldResponseDto updateCustomStatusHold(Long customId,
-		UpdateCustomStatusHoldRequestDto dto) {
+			UpdateCustomStatusHoldRequestDto dto) {
 
 		// 커스텀 요청 조회
 		Custom custom = customRepository.findById(customId)
-			.orElseThrow(() -> new IllegalArgumentException("Custom 요청을 찾을 수 없습니다. ID=" + customId));
+				.orElseThrow(() -> new IllegalArgumentException("Custom 요청을 찾을 수 없습니다. ID=" + customId));
 
 		// 상태 검증
 		if (custom.getStatus() == Status.HOLD || custom.getStatus() == Status.COMPLETED) {
@@ -408,18 +408,18 @@ public class CustomService {
 
 		// 강아지 상태 SUSPENDED로 변경
 		Dog dog = dogRepository.findById(custom.getDogId())
-			.orElseThrow(() -> new IllegalArgumentException("강아지를 찾을 수 없습니다. ID=" + custom.getDogId()));
+				.orElseThrow(() -> new IllegalArgumentException("강아지를 찾을 수 없습니다. ID=" + custom.getDogId()));
 		dog.setStatus(com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status.SUSPENDED);
 		dogRepository.save(dog);
 
 		// 응답 DTO 생성 및 반환
 		UpdateCustomStatusHoldResponseDto responseDto = new UpdateCustomStatusHoldResponseDto(
-			custom.getId(),
-			dog.getId(),
-			custom.getAdminId(),
-			custom.getStatus(),
-			hold.getReason(),
-			hold.getCreatedAt());
+				custom.getId(),
+				dog.getId(),
+				custom.getAdminId(),
+				custom.getStatus(),
+				hold.getReason(),
+				hold.getCreatedAt());
 
 		return responseDto;
 	}
@@ -439,25 +439,25 @@ public class CustomService {
 	 */
 	@Transactional
 	public UpdateCustomStatusCompletedResponseDto updateCustomStatusCompleted(
-		Long customId,
-		UpdateCustomStatusCompletedRequestDto dto) throws IOException {
+			Long customId,
+			UpdateCustomStatusCompletedRequestDto dto) throws IOException {
 		Long adminId = dto.getAdminId();
 		MultipartFile renderedImage = dto.getRenderedImage();
 
 		// 커스텀 요청 조회
 		Custom custom = customRepository.findById(customId)
-			.orElseThrow(() -> new IllegalArgumentException("커스텀 요청을 찾을 수 없습니다. ID=" + customId));
+				.orElseThrow(() -> new IllegalArgumentException("커스텀 요청을 찾을 수 없습니다. ID=" + customId));
 
 		if (custom.getStatus() != Status.IN_PROGRESS) {
 			throw new IllegalStateException("현재 요청은 완료 처리할 수 없습니다. 상태: " + custom.getStatus());
 		}
 
-		// 렌더링 이미지 S3 업로드
-		String uploadedUrl = s3Uploader.upload(renderedImage, "dog-images/rendered");
+		// 렌더링 이미지 업로드
+		String uploadedUrl = fileUploadService.upload(renderedImage, "dog-images/rendered");
 
 		// Dog 엔티티에 렌더링 이미지 URL 저장 및 상태 변경
 		Dog dog = dogRepository.findById(custom.getDogId())
-			.orElseThrow(() -> new IllegalArgumentException("강아지를 찾을 수 없습니다. ID=" + custom.getDogId()));
+				.orElseThrow(() -> new IllegalArgumentException("강아지를 찾을 수 없습니다. ID=" + custom.getDogId()));
 		dog.setRenderedUrl(uploadedUrl);
 		dog.setStatus(com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status.APPROVED);
 		dogRepository.save(dog);
@@ -470,12 +470,12 @@ public class CustomService {
 
 		// 응답 DTO 생성 및 반환
 		return new UpdateCustomStatusCompletedResponseDto(
-			custom.getId(),
-			dog.getId(),
-			custom.getAdminId(),
-			custom.getStatus(),
-			dog.getRenderedUrl(),
-			custom.getCompletedAt());
+				custom.getId(),
+				dog.getId(),
+				custom.getAdminId(),
+				custom.getStatus(),
+				dog.getRenderedUrl(),
+				custom.getCompletedAt());
 	}
 
 	/**
@@ -492,12 +492,12 @@ public class CustomService {
 	 */
 	@Transactional
 	public UpdateCustomStatusCanceledResponseDto updateCustomStatusCanceled(Long customId,
-		UpdateCustomStatusCanceledRequestDto dto) {
+			UpdateCustomStatusCanceledRequestDto dto) {
 		Long adminId = dto.getAdminId();
 
 		// 커스텀 요청 조회
 		Custom custom = customRepository.findById(customId)
-			.orElseThrow(() -> new IllegalArgumentException("해당 커스텀 요청이 존재하지 않습니다."));
+				.orElseThrow(() -> new IllegalArgumentException("해당 커스텀 요청이 존재하지 않습니다."));
 
 		// 상태 변경 및 관리자 아이디, 취소일자 설정
 		custom.setStatus(Status.CANCELED);
@@ -507,17 +507,17 @@ public class CustomService {
 
 		// 강아지 엔티티 조회 및 상태 변경
 		Dog dog = dogRepository.findById(custom.getDogId())
-			.orElseThrow(() -> new IllegalArgumentException("해당 강아지가 존재하지 않습니다."));
+				.orElseThrow(() -> new IllegalArgumentException("해당 강아지가 존재하지 않습니다."));
 		dog.setStatus(com.ohgiraffers.togedaeng.backend.domain.dog.entity.Status.SUSPENDED);
 		dogRepository.save(dog);
 
 		// 응답 DTO 생성 및 반환
 		UpdateCustomStatusCanceledResponseDto responseDto = new UpdateCustomStatusCanceledResponseDto(
-			custom.getId(),
-			custom.getDogId(),
-			custom.getAdminId(),
-			custom.getStatus(),
-			custom.getCanceledAt());
+				custom.getId(),
+				custom.getDogId(),
+				custom.getAdminId(),
+				custom.getStatus(),
+				custom.getCanceledAt());
 
 		return responseDto;
 	}
