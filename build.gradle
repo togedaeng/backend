@@ -42,8 +42,8 @@ dependencies {
     // MySQL
     runtimeOnly 'com.mysql:mysql-connector-j'
 
-    // AWS S3 (로컬 파일 업로드로 변경하여 제거)
-    // implementation 'com.amazonaws:aws-java-sdk-s3:1.12.174'
+    // AWS S3
+    implementation 'com.amazonaws:aws-java-sdk-s3:1.12.174'
 
     // 기타 라이브러리
     implementation 'com.slack.api:slack-api-client:1.43.0'
