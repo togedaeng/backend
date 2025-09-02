@@ -3,14 +3,10 @@ FROM gradle:8.5-jdk17-jammy AS build
 
 WORKDIR /home/gradle/src
 
-# ★★★ 이 라인 삭제 ★★★
-# ARG FIREBASE_KEY_JSON
-
+# 소스 코드를 복사합니다.
 COPY --chown=gradle:gradle . .
 
-# ★★★ 이 라인 삭제 ★★★
-# RUN echo "${FIREBASE_KEY_JSON}" > ./src/main/resources/firebase-service-account.json
-
+# Gradle을 사용하여 테스트를 제외하고 애플리케이션을 빌드합니다.
 RUN gradle bootJar -x test
 
 # =======================================================
@@ -20,9 +16,12 @@ FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 
+# 빌드 단계에서 생성된 jar 파일을 복사합니다.
 COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
 
-# ★★★ 이 라인도 삭제 ★★★
-# COPY --from=build /home/gradle/src/src/main/resources/firebase-service-account.json /app/firebase-service-account.json
+# entrypoint.sh 스크립트를 이미지 안으로 복사하고 실행 권한을 부여합니다.
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# 컨테이너가 시작될 때 entrypoint.sh 스크립트를 실행합니다.
+ENTRYPOINT ["./entrypoint.sh"]
