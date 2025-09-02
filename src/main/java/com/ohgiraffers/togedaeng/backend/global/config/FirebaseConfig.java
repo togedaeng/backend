@@ -5,10 +5,12 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 
 import jakarta.annotation.PostConstruct;
-import java.io.FileInputStream; // FileInputStream을 사용하기 위해 import 합니다.
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 @Configuration
 @Slf4j
@@ -20,14 +22,24 @@ public class FirebaseConfig {
             if (FirebaseApp.getApps().isEmpty()) {
                 log.info("Firebase 초기화 시작");
 
-                // --- 수정된 부분 ---
-                // Docker 컨테이너 내부의 파일 시스템 경로를 직접 지정합니다.
-                // entrypoint.sh 스크립트가 파일을 이 경로로 옮겨줍니다.
-                String serviceAccountPath = "/app/firebase-service-account.json";
+                // 1. FIREBASE_KEY_PATH 환경 변수를 확인합니다.
+                String firebaseKeyPath = System.getenv("FIREBASE_KEY_PATH");
+                InputStream serviceAccount;
 
-                FileInputStream serviceAccount = new FileInputStream(serviceAccountPath);
-
-                // --- 여기까지 수정 ---
+                if (firebaseKeyPath != null && !firebaseKeyPath.isEmpty()) {
+                    // 2. 환경 변수가 있으면 (Render 배포 환경), 해당 파일 경로에서 읽어옵니다.
+                    log.info("환경 변수 FIREBASE_KEY_PATH 에서 서비스 계정 파일을 로드합니다: " + firebaseKeyPath);
+                    serviceAccount = new FileInputStream(firebaseKeyPath);
+                } else {
+                    // 3. 환경 변수가 없으면 (로컬 개발 환경), 기존처럼 classpath에서 읽어옵니다.
+                    log.info("classpath:firebase-service-account.json 에서 서비스 계정 파일을 로드합니다.");
+                    ClassPathResource resource = new ClassPathResource("firebase-service-account.json");
+                    if (!resource.exists()) {
+                        log.error("classpath에서 firebase-service-account.json 파일을 찾을 수 없습니다.");
+                        throw new IOException("classpath:firebase-service-account.json not found");
+                    }
+                    serviceAccount = resource.getInputStream();
+                }
 
                 FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
@@ -42,3 +54,4 @@ public class FirebaseConfig {
         }
     }
 }
+
