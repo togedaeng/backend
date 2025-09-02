@@ -5,6 +5,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### macbook 설정파일같은건데 필요없는.. ###
+.DS_Store
+
 ### STS ###
 .apt_generated
 .classpath
