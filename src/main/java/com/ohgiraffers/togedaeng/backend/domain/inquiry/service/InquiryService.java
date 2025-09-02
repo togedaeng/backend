@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.ohgiraffers.togedaeng.backend.domain.custom.service.FileUploadService;
+import com.ohgiraffers.togedaeng.backend.domain.custom.service.S3Uploader;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.controller.InquiryController;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.CreateInquiryAnswerRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.inquiry.dto.request.CreateInquiryRequestDto;
@@ -45,7 +45,7 @@ public class InquiryService {
 	private final InquiryRepository inquiryRepository;
 	private final InquiryAnswerRepository inquiryAnswerRepository;
 	private final UserRepository userRepository;
-	private final FileUploadService fileUploadService;
+	private final S3Uploader s3Uploader;
 
 	/**
 	 * 📍 문의 전체 조회 서비스
@@ -118,7 +118,7 @@ public class InquiryService {
 		if (images != null && !images.isEmpty()) {
 			for (MultipartFile image : images) {
 				try {
-					String imageUrl = fileUploadService.upload(image, "inquiries"); // 로컬 'inquiries' 폴더에 저장
+					String imageUrl = s3Uploader.upload(image, "inquiries");
 					InquiryImage inquiryImage = new InquiryImage(null, null, imageUrl);
 					newInquiry.addImage(inquiryImage); // 연관관계 편의 메소드 사용
 				} catch (IOException e) {
@@ -174,7 +174,7 @@ public class InquiryService {
 					.collect(Collectors.toList());
 
 			for (InquiryImage image : imagesToRemove) {
-				fileUploadService.delete(image.getImageUrl()); // 로컬에서 파일 삭제
+				s3Uploader.delete(image.getImageUrl());
 				inquiry.getImages().remove(image); // 컬렉션에서 제거 (orphanRemoval=true로 DB에서도 삭제됨)
 			}
 			log.info("🖼️ 기존 문의 이미지 {}개 삭제 성공", imagesToRemove.size());
@@ -184,7 +184,7 @@ public class InquiryService {
 		if (newImages != null && !newImages.isEmpty()) {
 			for (MultipartFile image : newImages) {
 				try {
-					String imageUrl = fileUploadService.upload(image, "inquiries");
+					String imageUrl = s3Uploader.upload(image, "inquiries");
 					inquiry.addImage(new InquiryImage(null, null, imageUrl));
 				} catch (IOException e) {
 					throw new RuntimeException("새 이미지 업로드에 실패했습니다.");
