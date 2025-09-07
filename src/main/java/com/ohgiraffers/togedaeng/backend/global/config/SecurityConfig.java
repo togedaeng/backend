@@ -33,7 +33,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers("/auth/**", "/oauth/callback/**", "/signup").permitAll()
 				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // OPTIONS 요청은 모두 허용
-				.requestMatchers("/api/inquiry/**", "/api/notice/**", "/user/me").hasAnyRole("USER", "ADMIN")
+				.requestMatchers("/api/inquiry/**", "/api/notice/**", "/user/me", "/user/fcm-token").hasAnyRole("USER", "ADMIN")
 				.requestMatchers(HttpMethod.POST, "/api/inquiry/*/answer").hasRole("ADMIN")
 				.anyRequest().hasRole("ADMIN")
 			)
