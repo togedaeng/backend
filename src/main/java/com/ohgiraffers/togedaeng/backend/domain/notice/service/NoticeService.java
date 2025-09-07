@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.ohgiraffers.togedaeng.backend.domain.custom.service.FileUploadService;
+import com.ohgiraffers.togedaeng.backend.domain.custom.service.S3Uploader;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.request.CreateNoticeRequestDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.request.NoticeImageDto;
 import com.ohgiraffers.togedaeng.backend.domain.notice.dto.request.UpdateNoticeRequestDto;
@@ -44,7 +44,7 @@ public class NoticeService {
 	private final NoticeRepository noticeRepository;
 	private final UserRepository userRepository;
 	private final NoticeImageRepository noticeImageRepository;
-	private final FileUploadService fileUploadService;
+	private final S3Uploader s3Uploader;
 
 	/**
 	 * 📍 공지 전체 조회 서비스
@@ -134,7 +134,7 @@ public class NoticeService {
 		if (images != null && !images.isEmpty()) {
 			for (MultipartFile image : images) {
 				try {
-					String imageUrl = fileUploadService.upload(image, "notices");
+					String imageUrl = s3Uploader.upload(image, "notices");
 					NoticeImage noticeImage = new NoticeImage(imageUrl);
 					newNotice.addImage(noticeImage);
 				} catch (IOException e) {
@@ -198,7 +198,7 @@ public class NoticeService {
 					.collect(Collectors.toList());
 
 			for (NoticeImage image : imagesToRemove) {
-				fileUploadService.delete(image.getImageUrl()); // 로컬에서 파일 삭제
+				s3Uploader.delete(image.getImageUrl());
 				notice.getImages().remove(image); // 컬렉션에서 제거 (orphanRemoval=true가 DB에서 삭제)
 			}
 			log.info("🖼️ 기존 S3 이미지 {}개 삭제 성공", imagesToRemove.size());
@@ -208,7 +208,7 @@ public class NoticeService {
 		if (newImages != null && !newImages.isEmpty()) {
 			for (MultipartFile image : newImages) {
 				try {
-					String imageUrl = fileUploadService.upload(image, "notices");
+					String imageUrl = s3Uploader.upload(image, "notices");
 					notice.addImage(new NoticeImage(imageUrl));
 				} catch (IOException e) {
 					throw new RuntimeException("새 이미지 업로드에 실패했습니다.");

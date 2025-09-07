@@ -56,7 +56,7 @@ public class CustomService {
 	Logger log = LoggerFactory.getLogger(CustomService.class);
 
 	private final CustomRepository customRepository;
-	private final FileUploadService fileUploadService;
+	private final S3Uploader s3Uploader;
 	private final DogImageRepository dogImageRepository;
 	private final DogRepository dogRepository;
 	private final HoldRepository holdRepository;
@@ -92,7 +92,7 @@ public class CustomService {
 
 		// 2. 메인 이미지 업로드 및 저장
 		try {
-			String mainUrl = fileUploadService.upload(mainImage, "dog-images");
+			String mainUrl = s3Uploader.upload(mainImage, "dog-images");
 			dogImageRepository.save(new DogImage(null, custom.getId(), mainUrl, Type.MAIN));
 			log.debug("📷 메인 이미지 업로드 완료 - url: {}", mainUrl);
 		} catch (IOException e) {
@@ -126,7 +126,7 @@ public class CustomService {
 		try {
 			if (subImages != null) {
 				for (MultipartFile sub : subImages) {
-					String subUrl = fileUploadService.upload(sub, "dog-images");
+					String subUrl = s3Uploader.upload(sub, "dog-images");
 					dogImageRepository.save(new DogImage(null, customId, subUrl, Type.SUB));
 					log.debug("📷 서브 이미지 업로드 완료 - url: {}", subUrl);
 				}
@@ -453,7 +453,7 @@ public class CustomService {
 		}
 
 		// 렌더링 이미지 업로드
-		String uploadedUrl = fileUploadService.upload(renderedImage, "dog-images/rendered");
+		String uploadedUrl = s3Uploader.upload(renderedImage, "dog-images/rendered");
 
 		// Dog 엔티티에 렌더링 이미지 URL 저장 및 상태 변경
 		Dog dog = dogRepository.findById(custom.getDogId())
