@@ -63,12 +63,19 @@ public class DogService {
 
 		log.info("🐶 [강아지 등록] 시작 - userId: {}", userId);
 
-		// 1. PersonalityCombination 생성 (성격 1개 또는 2개)
-		PersonalityCombination combination = PersonalityCombination.builder()
-			.personalityId1(dto.getPersonalityId1())
-			.personalityId2(dto.getPersonalityId2())
-			.build();
-		personalityCombinationRepository.save(combination);
+		// 1. PersonalityCombination 조회 또는 생성 (성격 1개 또는 2개)
+		PersonalityCombination combination = personalityCombinationRepository
+			.findByPersonalityId1AndPersonalityId2(dto.getPersonalityId1(), dto.getPersonalityId2())
+			.orElseGet(() -> {
+				// 기존 조합이 없으면 새로 생성
+				PersonalityCombination newCombination = PersonalityCombination.builder()
+					.personalityId1(dto.getPersonalityId1())
+					.personalityId2(dto.getPersonalityId2())
+					.build();
+				return personalityCombinationRepository.save(newCombination);
+			});
+
+		log.debug("📌 성격 조합 조회/생성 완료 - combinationId: {}", combination.getId());
 
 		// 2. Dog 엔티티 생성 (personality_combo_id 세팅 후 저장)
 		Dog dog = Dog.builder()
