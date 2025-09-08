@@ -31,11 +31,17 @@ public class SecurityConfig {
 			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/auth/**", "/oauth/callback/**", "/signup").permitAll()
-				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // OPTIONS 요청은 모두 허용
-				.requestMatchers("/api/inquiry/**", "/api/notice/**", "/user/me").hasAnyRole("USER", "ADMIN")
-				.requestMatchers(HttpMethod.POST, "/api/inquiry/*/answer").hasRole("ADMIN")
-				.anyRequest().hasRole("ADMIN")
+				.requestMatchers("/auth/**", "/oauth/callback/**", "/signup")
+				.permitAll()
+				.requestMatchers(HttpMethod.OPTIONS, "/**")
+				.permitAll() // OPTIONS 요청은 모두 허용
+				.requestMatchers("/api/inquiry/**", "/api/notice/**", "/user/me", "/user/fcm-token", "/api/dog/create",
+					"/api/dog/{customId}/sub-image")
+				.hasAnyRole("USER", "ADMIN")
+				.requestMatchers(HttpMethod.POST, "/api/inquiry/*/answer")
+				.hasRole("ADMIN")
+				.anyRequest()
+				.hasRole("ADMIN")
 			)
 			.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 // Firebase 관련 import 추가
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -60,6 +61,7 @@ public class FcmService {
      * @param requestDto 토큰 요청 DTO
      * @return 등록 결과 DTO
      */
+    @Transactional
     public FcmTokenResponseDto registerFcmToken(Long userId, FcmTokenRequestDto requestDto) {
 
         // 1. 사용자 조회
@@ -86,6 +88,7 @@ public class FcmService {
      * 푸시 알림 토큰 삭제
      * @param fcmToken 삭제할 토큰
      */
+    @Transactional
     public void deleteFcmToken(String fcmToken) {
         // 1. 토큰 조회
         FcmToken fcmTokenEntity = fcmTokenRepository.findByFcmToken(fcmToken)

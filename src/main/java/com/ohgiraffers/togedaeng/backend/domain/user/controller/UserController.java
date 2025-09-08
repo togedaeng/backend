@@ -23,6 +23,7 @@ import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.dto.UserWithDogResponseDto;
 import com.ohgiraffers.togedaeng.backend.domain.user.model.entity.User;
 import com.ohgiraffers.togedaeng.backend.domain.user.repository.UserRepository;
+import com.ohgiraffers.togedaeng.backend.domain.user.service.FcmService;
 import com.ohgiraffers.togedaeng.backend.domain.user.service.UserService;
 import com.ohgiraffers.togedaeng.backend.global.auth.service.JwtProvider;
 
@@ -31,6 +32,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/user")
 public class UserController {
+	private final FcmService fcmService;
 	Logger log = LoggerFactory.getLogger(UserController.class);
 
 	private final UserService userService;
@@ -38,10 +40,12 @@ public class UserController {
 	private final UserRepository userRepository;
 
 	@Autowired
-	public UserController(UserService userService, JwtProvider jwtProvider, UserRepository userRepository) {
+	public UserController(UserService userService, JwtProvider jwtProvider, UserRepository userRepository,
+		FcmService fcmService) {
 		this.userService = userService;
 		this.jwtProvider = jwtProvider;
 		this.userRepository = userRepository;
+		this.fcmService = fcmService;
 	}
 
 	/**
@@ -162,11 +166,21 @@ public class UserController {
 			// Authorization 헤더에서 Bearer 토큰 추출
 			String authHeader = request.getHeader("Authorization");
 			log.info("Authorization header: {}", authHeader);
+
+			String token = authHeader.substring(7); // "Bearer " 제거
+			log.info("Extracted token: {}", token.substring(0, Math.min(token.length(), 20)) + "...");
+
+			Long userId = jwtProvider.getUserId(token);
+			log.info("Extracted userId: {}", userId);
+
+			// FCM 토큰 등록
+			FcmTokenResponseDto response = fcmService.registerFcmToken(userId, fcmTokenRequestDto);
+			log.info("FCM token registered: {}", response);
+			return new ResponseEntity<>(response, HttpStatus.OK);
+
 		} catch (Exception e) {
 			log.error("Error registering FCM token", e);
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}
-
-		return new ResponseEntity<>(HttpStatus.OK);
 	}
 }
