@@ -10,3 +10,13 @@ spring:
   config:
     # bootstrap.yml 대신 application.yml에서 직접 Config Server 주소를 지정합니다.
     import: "configserver:https://config-server-f6jk.onrender.com"
+
+  cloud:
+    config:
+      # Config 서버 연결에 실패하면 애플리케이션 시작을 중단합니다.
+      fail-fast: true
+      # 접속 실패 시 재시도 설정을 추가합니다.
+      retry:
+        initial-interval: 2000    # 첫 재시도까지 2초 대기
+        max-attempts: 6          # 총 6번 재시도
+        multiplier: 1.5          # 재시도할 때마다 대기 시간을 1.5배씩 늘림
